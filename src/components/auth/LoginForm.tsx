@@ -15,6 +15,7 @@ import {
   AlertIcon,
   useToast,
   Divider,
+  Flex,
 } from "@chakra-ui/react";
 import { FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
@@ -25,7 +26,7 @@ export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const toast = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -55,11 +56,11 @@ export const LoginForm = () => {
     }
   };
 
+  // Desktop version
   return (
     <Box
       maxW="md"
-      mx="auto"
-      mt={10}
+      w="full"
       p={8}
       borderWidth={1}
       borderRadius="xl"

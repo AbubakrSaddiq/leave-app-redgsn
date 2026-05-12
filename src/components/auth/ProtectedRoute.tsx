@@ -2,15 +2,16 @@ import React from "react";
 import { Center, Spinner, VStack, Text, Box } from "@chakra-ui/react";
 import { useAuth } from "@/hooks/useAuth";
 import { LoginForm } from "./LoginForm";
+import { LandingPage } from "@/components/pages/LandingPage";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[]; // Optional: limit access to specific roles (e.g., ['director', 'hr'])
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  allowedRoles 
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  allowedRoles,
 }) => {
   const { profile, isLoading } = useAuth();
 
@@ -20,7 +21,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       <Center h="100vh">
         <VStack spacing={4}>
           <Spinner size="xl" color="blue.500" thickness="4px" />
-          <Text fontWeight="medium" color="gray.600">Verifying session...</Text>
+          <Text fontWeight="medium" color="gray.600">
+            Verifying session...
+          </Text>
         </VStack>
       </Center>
     );
@@ -31,7 +34,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return (
       <Center h="100vh" bg="gray.50">
         <Box w="full" maxW="400px" p={4}>
-          <LoginForm />
+          {/* <LoginForm /> */}
+          <LandingPage />
         </Box>
       </Center>
     );
@@ -43,7 +47,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       <Center h="100vh">
         <VStack spacing={4} textAlign="center" p={8}>
           <Text fontSize="5xl">🚫</Text>
-          <Text fontSize="xl" fontWeight="bold">Access Denied</Text>
+          <Text fontSize="xl" fontWeight="bold">
+            Access Denied
+          </Text>
           <Text color="gray.600">
             You do not have the required permissions to view this page.
             <br />

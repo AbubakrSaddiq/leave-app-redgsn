@@ -1,15 +1,46 @@
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 import {
-  Box, VStack, HStack, Heading, Text, Button, Card, CardBody,
-  FormControl, FormLabel, Input, Select, Table, Thead, Tbody,
-  Tr, Th, Td, Badge, Spinner, Center, Icon,
-  Menu, MenuButton, MenuList, MenuItem, IconButton,
-} from '@chakra-ui/react';
-import { FiPrinter, FiDownload, FiFilter, FiX, FiFileText, FiMoreVertical, FiEye } from 'react-icons/fi';
-import { LeaveType } from '@/types/models';
-import { LeaveDetailModal } from './LeaveDetailModal';
-import { useLeaveReports } from '@/hooks/useLeaveReports';
-import { formatDate } from '@/utils/date.utils';
+  Box,
+  VStack,
+  HStack,
+  Heading,
+  Text,
+  Button,
+  Card,
+  CardBody,
+  FormControl,
+  FormLabel,
+  Input,
+  Select,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Badge,
+  Spinner,
+  Center,
+  Icon,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  IconButton,
+} from "@chakra-ui/react";
+import {
+  FiPrinter,
+  FiDownload,
+  FiFilter,
+  FiX,
+  FiFileText,
+  FiMoreVertical,
+  FiEye,
+} from "react-icons/fi";
+import { LeaveType } from "@/types/models";
+import { LeaveDetailModal } from "./LeaveDetailModal";
+import { useLeaveReports } from "@/hooks/useLeaveReports";
+import { formatDate } from "@/utils/date.utils";
 
 export function ReportsPage() {
   const {
@@ -71,7 +102,9 @@ export function ReportsPage() {
             <HStack justify="space-between" mb={4}>
               <HStack spacing={2}>
                 <Icon as={FiFilter} color="gray.500" />
-                <Text fontWeight="bold" fontSize="sm">Filters</Text>
+                <Text fontWeight="bold" fontSize="sm">
+                  Filters
+                </Text>
               </HStack>
               {hasActiveFilters && (
                 <Button
@@ -92,7 +125,7 @@ export function ReportsPage() {
                   type="date"
                   size="sm"
                   value={filters.startDate}
-                  onChange={(e) => updateFilter('startDate', e.target.value)}
+                  onChange={(e) => updateFilter("startDate", e.target.value)}
                 />
               </FormControl>
 
@@ -102,7 +135,7 @@ export function ReportsPage() {
                   type="date"
                   size="sm"
                   value={filters.endDate}
-                  onChange={(e) => updateFilter('endDate', e.target.value)}
+                  onChange={(e) => updateFilter("endDate", e.target.value)}
                 />
               </FormControl>
 
@@ -111,7 +144,7 @@ export function ReportsPage() {
                 <Select
                   size="sm"
                   value={filters.departmentId}
-                  onChange={(e) => updateFilter('departmentId', e.target.value)}
+                  onChange={(e) => updateFilter("departmentId", e.target.value)}
                   placeholder="All Departments"
                 >
                   {departments?.map((dept) => (
@@ -127,7 +160,7 @@ export function ReportsPage() {
                 <Select
                   size="sm"
                   value={filters.leaveType}
-                  onChange={(e) => updateFilter('leaveType', e.target.value)}
+                  onChange={(e) => updateFilter("leaveType", e.target.value)}
                   placeholder="All Types"
                 >
                   <option value={LeaveType.ANNUAL}>Annual</option>
@@ -161,15 +194,16 @@ export function ReportsPage() {
                   </Text>
                   <Text color="gray.400" fontSize="sm">
                     {hasActiveFilters
-                      ? 'Try adjusting your filters'
-                      : 'Select filters to generate a report'}
+                      ? "Try adjusting your filters"
+                      : "Select filters to generate a report"}
                   </Text>
                 </VStack>
               </Center>
             ) : (
               <>
                 <Text fontSize="sm" color="gray.600" mb={4}>
-                  Showing {reports.length} approved application{reports.length !== 1 ? 's' : ''}
+                  Showing {reports.length} approved application
+                  {reports.length !== 1 ? "s" : ""}
                 </Text>
 
                 <Box ref={printRef} className="print-content">
@@ -188,7 +222,7 @@ export function ReportsPage() {
                     </Thead>
                     <Tbody>
                       {reports.map((report) => (
-                        <Tr key={report.id} _hover={{ bg: 'gray.25' }}>
+                        <Tr key={report.id} _hover={{ bg: "gray.25" }}>
                           <Td fontFamily="mono" fontSize="xs">
                             {report.application_number}
                           </Td>
@@ -205,14 +239,18 @@ export function ReportsPage() {
                             </VStack>
                           </Td>
                           <Td fontSize="xs">
-                            {report.user.department?.code || '—'}
+                            {report.user.department?.code || "—"}
                           </Td>
                           <Td>
                             <Badge
                               colorScheme={
-                                report.leave_type === 'annual' ? 'blue' :
-                                report.leave_type === 'sick' ? 'red' :
-                                report.leave_type === 'casual' ? 'green' : 'purple'
+                                report.leave_type === "annual"
+                                  ? "blue"
+                                  : report.leave_type === "sick"
+                                    ? "red"
+                                    : report.leave_type === "casual"
+                                      ? "green"
+                                      : "purple"
                               }
                               fontSize="10px"
                             >
@@ -220,8 +258,8 @@ export function ReportsPage() {
                             </Badge>
                           </Td>
                           <Td fontSize="xs">
-                            {formatDate(report.start_date, 'MMM d')} -{' '}
-                            {formatDate(report.end_date, 'MMM d, yyyy')}
+                            {formatDate(report.start_date, "MMM d")} -{" "}
+                            {formatDate(report.end_date, "MMM d, yyyy")}
                           </Td>
                           <Td fontSize="xs" fontWeight="bold">
                             {report.working_days}
@@ -230,12 +268,17 @@ export function ReportsPage() {
                             <VStack align="start" spacing={1}>
                               {report.director_approved_at && (
                                 <Text fontSize="10px" color="gray.600">
-                                  ✓ Director: {formatDate(report.director_approved_at, 'MMM d')}
+                                  ✓ Director:{" "}
+                                  {formatDate(
+                                    report.director_approved_at,
+                                    "MMM d",
+                                  )}
                                 </Text>
                               )}
                               {report.hr_approved_at && (
                                 <Text fontSize="10px" color="gray.600">
-                                  ✓ HR: {formatDate(report.hr_approved_at, 'MMM d')}
+                                  ✓ HR:{" "}
+                                  {formatDate(report.hr_approved_at, "MMM d")}
                                 </Text>
                               )}
                             </VStack>
