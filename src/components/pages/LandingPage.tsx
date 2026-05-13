@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+// File: src/pages/LandingPage.tsx (UPDATED with NASENI brand)
+import React from "react";
 import {
   Box,
   Button,
@@ -19,314 +20,167 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 
-import { keyframes } from "@emotion/react";
 import {
   FiArrowRight,
   FiCheck,
   FiClock,
-  FiFileText,
-  FiShield,
-  FiTrendingUp,
-  FiUsers,
+  FiLayers,
+  FiCheckCircle,
   FiZap,
   FiCalendar,
-  FiCheckCircle,
-  FiLayers,
+  FiUsers,
 } from "react-icons/fi";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { AnimatedSection } from "@/components/landing/AnimatedSection";
+import { WorkflowStep } from "@/components/landing/WorkflowStep";
+import { BenefitCard } from "@/components/landing/BenefitCard";
+import { fadeUp, shimmer, float, pulse } from "@/utils/keyframes";
 
-// ─── Animations ────────────────────────────────────────────────────────────
+// Updated data with NASENI brand colors
+const TRUST_SIGNALS = [
+  { label: "6 leave types", icon: FiCalendar },
+  { label: "3 staff roles", icon: FiUsers },
+  { label: "Instant approvals", icon: FiZap },
+];
 
-const fadeUp = keyframes`
-  from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
-`;
+const LEAVE_BALANCES = [
+  { label: "Annual Leave", pct: 72, color: "#003366", days: "21.6 days" },
+  { label: "Casual Leave", pct: 43, color: "#407ebd", days: "3 days" },
+  { label: "Sick Leave", pct: 20, color: "#00a86b", days: "2 days" },
+  { label: "Study Leave", pct: 90, color: "#407ebd", days: "4 yrs" },
+];
 
-const fadeIn = keyframes`
-  from { opacity: 0; }
-  to   { opacity: 1; }
-`;
+const STAFF_WORKFLOW_STEPS = [
+  {
+    number: "1",
+    icon: FiCalendar,
+    title: "Select leave type & dates",
+    description:
+      "Choose from Annual, Casual, Sick, Maternity, Paternity, or Study leave. Working days are calculated automatically, excluding weekends and public holidays.",
+  },
+  {
+    number: "2",
+    icon: FiLayers,
+    title: "Submit with reason",
+    description:
+      "Provide a reason and review your calculated resumption date before submitting. The system validates against your available balance in real time.",
+  },
+  {
+    number: "3",
+    icon: FiClock,
+    title: "Track your application",
+    description:
+      "Monitor your application status — Pending Director, Pending HR, Approved, or Rejected — from your personal dashboard at any time.",
+  },
+  {
+    number: "4",
+    icon: FiCheckCircle,
+    title: "Receive final decision",
+    description:
+      "Once both stages are complete you'll see the final outcome alongside any comments left by the Director or HR team.",
+    isLast: true,
+  },
+];
 
-const shimmer = keyframes`
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
-`;
+const APPROVER_WORKFLOW_STEPS = [
+  {
+    number: "1",
+    icon: FiUsers,
+    title: "Director reviews first",
+    description:
+      "Department directors review incoming applications, verify team coverage, and either approve — forwarding to HR — or reject with a documented reason.",
+  },
+  {
+    number: "2",
+    icon: FiCheckCircle,
+    title: "HR validates policy",
+    description:
+      "HR administrators verify the application against leave policy, balance availability, and any outstanding obligations before the final approval.",
+  },
+  {
+    number: "3",
+    icon: FiZap,
+    title: "Analytics & reporting",
+    description:
+      "HR and Admin access comprehensive dashboards: department utilisation, monthly trends, desired-month submissions, and downloadable PDF reports.",
+  },
+  {
+    number: "4",
+    icon: FiUsers,
+    title: "Manage allocations",
+    description:
+      "Admins can adjust individual leave balances, re-run allocation rules for any year, and manage user accounts, departments, and designations.",
+    isLast: true,
+  },
+];
 
-const float = keyframes`
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50%       { transform: translateY(-12px) rotate(1deg); }
-`;
+const BENEFIT_CARDS = [
+  {
+    icon: FiZap,
+    title: "Automatic day calculation",
+    description:
+      "Working days are computed in real time, skipping Nigerian public holidays and weekends. No manual counting, no errors.",
+    stat: "0",
+    statLabel: "Manual calculations needed",
+  },
+  {
+    icon: FiCheckCircle,
+    title: "Role-based access control",
+    description:
+      "Staff, Directors, HR Admins, and System Admins each see only what they need. Data privacy and policy compliance by design.",
+    stat: "3",
+    statLabel: "Distinct access roles",
+  },
+  {
+    icon: FiCalendar,
+    title: "Desired months planning",
+    description:
+      "Staff submit their two preferred annual leave months ahead of time, giving management clear visibility for workforce planning.",
+    stat: "2",
+    statLabel: "Preferred months per staff",
+  },
+  {
+    icon: FiLayers,
+    title: "PDF export & print",
+    description:
+      "Generate a professional leave application PDF for any approved record — individual or bulk — directly from your browser.",
+  },
+  {
+    icon: FiUsers,
+    title: "Full user management",
+    description:
+      "Admins can create accounts, assign departments and designations, toggle access, and re-run leave allocations for any year.",
+  },
+];
 
-const pulse = keyframes`
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50%       { opacity: 0.8; transform: scale(1.05); }
-`;
+const LEAVE_TYPES = [
+  { name: "Annual", days: "30 days/yr", color: "#003366" },
+  { name: "Casual", days: "7 days/yr", color: "#407ebd" },
+  { name: "Sick", days: "10 days/yr", color: "#00a86b" },
+  { name: "Maternity", days: "16 weeks", color: "#407ebd" },
+  { name: "Paternity", days: "14 days", color: "#003366" },
+  { name: "Study", days: "BSc · MSc · PhD", color: "#407ebd" },
+];
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-interface AnimatedSectionProps {
-  children: React.ReactNode;
-  delay?: number;
-  [key: string]: any;
-}
-
-// ─── Animated wrapper (intersection-observer fade-up) ───────────────────────
-
-const AnimatedSection: React.FC<AnimatedSectionProps> = ({
-  children,
-  delay = 0,
-  ...rest
-}) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setVisible(true);
-      },
-      { threshold: 0.12 },
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <Box
-      ref={ref}
-      opacity={visible ? 1 : 0}
-      transform={visible ? "translateY(0)" : "translateY(28px)"}
-      transition={`opacity 0.65s ease ${delay}ms, transform 0.65s ease ${delay}ms`}
-      {...rest}
-    >
-      {children}
-    </Box>
-  );
-};
-
-// ─── Workflow Step ───────────────────────────────────────────────────────────
-
-interface WorkflowStepProps {
-  number: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  isLast?: boolean;
-}
-
-const WorkflowStep: React.FC<WorkflowStepProps> = ({
-  number,
-  title,
-  description,
-  icon,
-  isLast,
-}) => (
-  <Flex gap={5} align="flex-start" position="relative">
-    {/* Connector line */}
-    {!isLast && (
-      <Box
-        position="absolute"
-        left="27px"
-        top="56px"
-        width="2px"
-        height="calc(100% + 16px)"
-        bgGradient="linear(to-b, #D4A843, transparent)"
-        zIndex={0}
-      />
-    )}
-
-    {/* Step icon */}
-    <Box flexShrink={0} position="relative" zIndex={1}>
-      <Box
-        w="56px"
-        h="56px"
-        borderRadius="14px"
-        bg="rgba(212,168,67,0.12)"
-        border="1.5px solid rgba(212,168,67,0.35)"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        position="relative"
-        _before={{
-          content: `"${number}"`,
-          position: "absolute",
-          top: "-8px",
-          right: "-8px",
-          w: "20px",
-          h: "20px",
-          borderRadius: "full",
-          bg: "#D4A843",
-          color: "#0D1B3E",
-          fontSize: "10px",
-          fontWeight: "800",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "'DM Mono', monospace",
-        }}
-      >
-        <Icon as={icon} color="#D4A843" boxSize={5} />
-      </Box>
-    </Box>
-
-    {/* Content */}
-    <Box pb={8}>
-      <Text
-        fontSize="sm"
-        fontWeight="700"
-        color="white"
-        letterSpacing="0.02em"
-        mb={1}
-        fontFamily="'Sora', sans-serif"
-      >
-        {title}
-      </Text>
-      <Text
-        fontSize="sm"
-        color="rgba(255,255,255,0.55)"
-        lineHeight="1.65"
-        fontFamily="'Lora', serif"
-      >
-        {description}
-      </Text>
-    </Box>
-  </Flex>
-);
-
-// ─── Benefit Card ────────────────────────────────────────────────────────────
-
-interface BenefitCardProps {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  stat?: string;
-  statLabel?: string;
-}
-
-const BenefitCard: React.FC<BenefitCardProps> = ({
-  icon,
-  title,
-  description,
-  stat,
-  statLabel,
-}) => (
-  <Box
-    p={7}
-    borderRadius="20px"
-    bg="rgba(255,255,255,0.032)"
-    border="1px solid rgba(255,255,255,0.075)"
-    backdropFilter="blur(12px)"
-    position="relative"
-    overflow="hidden"
-    role="group"
-    transition="all 0.3s ease"
-    _hover={{
-      bg: "rgba(255,255,255,0.06)",
-      border: "1px solid rgba(212,168,67,0.3)",
-      transform: "translateY(-4px)",
-      shadow: "0 20px 40px rgba(0,0,0,0.3)",
-    }}
-    _before={{
-      content: '""',
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      height: "1px",
-      bgGradient:
-        "linear(to-r, transparent, rgba(212,168,67,0.5), transparent)",
-      opacity: 0,
-      transition: "opacity 0.3s ease",
-    }}
-    sx={{
-      "&:hover::before": { opacity: 1 },
-    }}
-  >
-    <Box
-      w="44px"
-      h="44px"
-      borderRadius="12px"
-      bg="rgba(212,168,67,0.1)"
-      border="1px solid rgba(212,168,67,0.2)"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      mb={4}
-      transition="all 0.3s ease"
-      _groupHover={{ bg: "rgba(212,168,67,0.18)", transform: "scale(1.1)" }}
-    >
-      <Icon as={icon} color="#D4A843" boxSize={5} />
-    </Box>
-
-    <Text
-      fontSize="md"
-      fontWeight="700"
-      color="white"
-      mb={2}
-      fontFamily="'Sora', sans-serif"
-    >
-      {title}
-    </Text>
-    <Text
-      fontSize="sm"
-      color="rgba(255,255,255,0.5)"
-      lineHeight="1.7"
-      fontFamily="'Lora', serif"
-    >
-      {description}
-    </Text>
-
-    {stat && (
-      <Box mt={5} pt={5} borderTop="1px solid rgba(255,255,255,0.07)">
-        <Text
-          fontSize="2xl"
-          fontWeight="800"
-          color="#D4A843"
-          fontFamily="'Sora', sans-serif"
-          lineHeight={1}
-        >
-          {stat}
-        </Text>
-        <Text
-          fontSize="xs"
-          color="rgba(255,255,255,0.4)"
-          mt={1}
-          fontFamily="'Lora', serif"
-        >
-          {statLabel}
-        </Text>
-      </Box>
-    )}
-  </Box>
-);
-
-// ─── Main Landing Page ───────────────────────────────────────────────────────
+const CTA_CHECKLIST = [
+  "Secure login",
+  "Role-based access",
+  "Data stays private",
+];
 
 export const LandingPage = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <>
-      {/* Google Fonts */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap');
-
-        * { box-sizing: border-box; }
-
-        html { scroll-behavior: smooth; }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #080f22; }
-        ::-webkit-scrollbar-thumb { background: rgba(212,168,67,0.4); border-radius: 3px; }
-      `}</style>
-
       <Box
         minH="100vh"
-        bg="#080f22"
-        fontFamily="'Sora', sans-serif"
+        bg="landing.bg.primary"
         overflowX="hidden"
+        width="100%"
+        mx="auto"
       >
-        {/* ── Background atmosphere ── */}
+        {/* Background atmosphere - enhanced visibility with NASENI colors */}
         <Box
           position="fixed"
           inset={0}
@@ -334,7 +188,7 @@ export const LandingPage = () => {
           pointerEvents="none"
           overflow="hidden"
         >
-          {/* Radial glow top-right */}
+          {/* Primary brand glow - top right */}
           <Box
             position="absolute"
             top="-15%"
@@ -342,10 +196,10 @@ export const LandingPage = () => {
             w="700px"
             h="700px"
             borderRadius="full"
-            bg="radial-gradient(circle, rgba(212,168,67,0.07) 0%, transparent 70%)"
+            bg="radial-gradient(circle, rgba(0,51,102,0.12) 0%, transparent 70%)"
             animation={`${pulse} 8s ease-in-out infinite`}
           />
-          {/* Radial glow bottom-left */}
+          {/* Secondary brand glow - bottom left */}
           <Box
             position="absolute"
             bottom="-10%"
@@ -353,41 +207,42 @@ export const LandingPage = () => {
             w="500px"
             h="500px"
             borderRadius="full"
-            bg="radial-gradient(circle, rgba(29,78,178,0.12) 0%, transparent 70%)"
+            bg="radial-gradient(circle, rgba(64,126,189,0.1) 0%, transparent 70%)"
             animation={`${pulse} 10s ease-in-out infinite 2s`}
           />
-          {/* Subtle grid */}
+          {/* Subtle grid pattern */}
           <Box
             position="absolute"
             inset={0}
-            opacity={0.018}
+            opacity={0.03}
             backgroundImage="linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)"
             backgroundSize="60px 60px"
           />
         </Box>
 
-        {/* ── NAV ── */}
+        {/* Navigation */}
         <Box
-          as="nav"
           position="sticky"
           top={0}
           zIndex={100}
-          borderBottom="1px solid rgba(255,255,255,0.06)"
-          bg="rgba(8,15,34,0.85)"
+          borderBottom="1px solid"
+          borderBottomColor="landing.border.light"
+          bg="landing.bg.overlay"
           backdropFilter="blur(20px)"
+          w="100%"
         >
-          <Container maxW="1200px" py={4}>
+          <Box maxW="1200px" mx="auto" px={{ base: 4, md: 8 }} py={4}>
             <Flex justify="space-between" align="center">
               <HStack spacing={3}>
                 <Box
                   w="36px"
                   h="36px"
                   borderRadius="10px"
-                  bg="linear-gradient(135deg, #D4A843 0%, #B8862A 100%)"
+                  bg="landing.gradients.brand"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
-                  shadow="0 4px 12px rgba(212,168,67,0.4)"
+                  shadow="landing.shadows.brand"
                 >
                   <Icon as={FiLayers} color="white" boxSize={4} />
                 </Box>
@@ -395,7 +250,7 @@ export const LandingPage = () => {
                   <Text
                     fontSize="sm"
                     fontWeight="800"
-                    color="white"
+                    color="landing.text.primary"
                     lineHeight={1}
                     letterSpacing="0.03em"
                   >
@@ -403,7 +258,7 @@ export const LandingPage = () => {
                   </Text>
                   <Text
                     fontSize="9px"
-                    color="rgba(212,168,67,0.8)"
+                    color="landing.brand.light"
                     letterSpacing="0.18em"
                     textTransform="uppercase"
                     fontFamily="'DM Mono', monospace"
@@ -414,93 +269,46 @@ export const LandingPage = () => {
               </HStack>
 
               <Button
+                variant="landing-outline"
                 size="sm"
                 onClick={onOpen}
-                bg="transparent"
-                border="1px solid rgba(212,168,67,0.4)"
-                color="#D4A843"
-                fontFamily="'Sora', sans-serif"
-                fontWeight="600"
-                fontSize="xs"
-                letterSpacing="0.05em"
                 px={5}
-                borderRadius="8px"
-                transition="all 0.2s"
-                _hover={{
-                  bg: "rgba(212,168,67,0.1)",
-                  border: "1px solid rgba(212,168,67,0.8)",
-                  shadow: "0 0 20px rgba(212,168,67,0.15)",
-                }}
                 rightIcon={<FiArrowRight />}
               >
                 Sign In
               </Button>
             </Flex>
-          </Container>
+          </Box>
         </Box>
 
-        {/* ── HERO ── */}
+        {/* Hero Section */}
         <Box
           position="relative"
           zIndex={1}
           pt={{ base: 20, md: 28 }}
           pb={{ base: 16, md: 24 }}
         >
-          <Container maxW="1200px">
+          <Container maxW="1400px" px={{ base: 6, md: 10 }}>
             <Grid
-              templateColumns={{ base: "1fr", lg: "1fr 1fr" }}
-              gap={16}
+              templateColumns="repeat(3, 1fr)"
+              gap={{ base: 14, lg: 20 }}
               alignItems="center"
+              minH="80vh"
             >
-              {/* Left — copy */}
-              <GridItem>
-                <Box
-                  display="inline-flex"
-                  alignItems="center"
-                  gap={2}
-                  px={3}
-                  py={1.5}
-                  borderRadius="full"
-                  bg="rgba(212,168,67,0.08)"
-                  border="1px solid rgba(212,168,67,0.22)"
-                  mb={6}
-                  animation={`${fadeIn} 0.6s ease both`}
-                >
-                  <Box
-                    w="6px"
-                    h="6px"
-                    borderRadius="full"
-                    bg="#D4A843"
-                    animation={`${pulse} 2s ease-in-out infinite`}
-                  />
-                  <Text
-                    fontSize="11px"
-                    fontWeight="600"
-                    color="rgba(212,168,67,0.9)"
-                    letterSpacing="0.12em"
-                    textTransform="uppercase"
-                    fontFamily="'DM Mono', monospace"
-                  >
-                    Leave Management System
-                  </Text>
-                </Box>
-
+              <GridItem display="flex" alignItems="center">
                 <Heading
+                  variant="landing-hero"
                   as="h1"
                   fontSize={{ base: "3xl", md: "4xl", lg: "5xl" }}
-                  fontWeight="800"
-                  color="white"
                   lineHeight="1.12"
-                  letterSpacing="-0.02em"
                   mb={6}
-                  fontFamily="'Sora', sans-serif"
                   animation={`${fadeUp} 0.7s ease 0.1s both`}
                 >
                   Streamlined leave
                   <br />
                   <Box
                     as="span"
-                    bgGradient="linear(to-r, #D4A843, #F0C96A, #D4A843)"
+                    bgGradient="landing.gradients.brandShimmer"
                     bgClip="text"
                     backgroundSize="200% auto"
                     animation={`${shimmer} 4s linear infinite`}
@@ -510,258 +318,216 @@ export const LandingPage = () => {
                   <br />
                   staff member.
                 </Heading>
-
-                <Text
-                  fontSize={{ base: "md", md: "lg" }}
-                  color="rgba(255,255,255,0.55)"
-                  lineHeight="1.75"
-                  mb={10}
-                  maxW="480px"
-                  fontFamily="'Lora', serif"
-                  animation={`${fadeUp} 0.7s ease 0.2s both`}
-                >
-                  A centralized platform replacing paper forms and email chains.
-                  Apply, track, and approve leave requests — transparently and
-                  efficiently — across all departments.
-                </Text>
-
-                <HStack spacing={4} animation={`${fadeUp} 0.7s ease 0.3s both`}>
-                  <Button
-                    size="lg"
-                    onClick={onOpen}
-                    bg="linear-gradient(135deg, #D4A843 0%, #B8862A 100%)"
-                    color="#0D1B3E"
-                    fontFamily="'Sora', sans-serif"
-                    fontWeight="700"
-                    fontSize="sm"
-                    letterSpacing="0.04em"
-                    px={8}
-                    h="52px"
-                    borderRadius="12px"
-                    shadow="0 8px 24px rgba(212,168,67,0.35)"
-                    transition="all 0.25s ease"
-                    _hover={{
-                      transform: "translateY(-2px)",
-                      shadow: "0 12px 32px rgba(212,168,67,0.5)",
-                      bg: "linear-gradient(135deg, #E0B54F 0%, #C49130 100%)",
-                    }}
-                    _active={{ transform: "translateY(0)" }}
-                    rightIcon={<FiArrowRight />}
-                  >
-                    Access Dashboard
-                  </Button>
-
-                  <Button
-                    size="lg"
-                    as="a"
-                    href="#workflow"
-                    variant="ghost"
-                    color="rgba(255,255,255,0.5)"
-                    fontFamily="'Sora', sans-serif"
-                    fontWeight="500"
-                    fontSize="sm"
-                    h="52px"
-                    borderRadius="12px"
-                    _hover={{ color: "white", bg: "rgba(255,255,255,0.05)" }}
-                  >
-                    See how it works
-                  </Button>
-                </HStack>
-
-                {/* Trust signals */}
-                <HStack
-                  mt={10}
-                  spacing={6}
-                  animation={`${fadeUp} 0.7s ease 0.4s both`}
-                >
-                  {[
-                    { label: "6 leave types", icon: FiCalendar },
-                    { label: "4 staff roles", icon: FiUsers },
-                    { label: "Instant approvals", icon: FiZap },
-                  ].map((item) => (
-                    <HStack key={item.label} spacing={1.5}>
-                      <Icon
-                        as={item.icon}
-                        color="rgba(212,168,67,0.6)"
-                        boxSize={3.5}
-                      />
-                      <Text
-                        fontSize="xs"
-                        color="rgba(255,255,255,0.38)"
-                        fontFamily="'DM Mono', monospace"
-                        letterSpacing="0.04em"
-                      >
-                        {item.label}
-                      </Text>
-                    </HStack>
-                  ))}
-                </HStack>
               </GridItem>
 
-              {/* Right — floating dashboard mockup */}
+              <GridItem display="flex" alignItems="center">
+                <VStack>
+                  <Text
+                    fontSize={{ base: "md", md: "lg" }}
+                    color="landing.text.tertiary"
+                    lineHeight="1.75"
+                    mb={10}
+                    maxW="480px"
+                    animation={`${fadeUp} 0.7s ease 0.2s both`}
+                    fontFamily="'Lora', serif"
+                  >
+                    A centralized platform replacing paper forms and email
+                    chains. Apply, track, and approve leave requests —
+                    transparently and efficiently — across all departments.
+                  </Text>
+                  <HStack
+                    spacing={4}
+                    animation={`${fadeUp} 0.7s ease 0.3s both`}
+                  >
+                    <Button
+                      size="lg"
+                      onClick={onOpen}
+                      variant="landing-brand"
+                      px={8}
+                      h="52px"
+                      rightIcon={<FiArrowRight />}
+                    >
+                      Access Dashboard
+                    </Button>
+
+                    <Button
+                      size="lg"
+                      as="a"
+                      href="#workflow"
+                      variant="landing-ghost"
+                      h="52px"
+                    >
+                      See how it works
+                    </Button>
+                  </HStack>
+
+                  <HStack
+                    mt={10}
+                    spacing={6}
+                    animation={`${fadeUp} 0.7s ease 0.4s both`}
+                  >
+                    {TRUST_SIGNALS.map((item) => (
+                      <HStack key={item.label} spacing={1.5}>
+                        <Icon
+                          as={item.icon}
+                          color="landing.brand.light"
+                          boxSize={3.5}
+                          opacity={0.7}
+                        />
+                        <Text
+                          fontSize="xs"
+                          color="landing.text.muted"
+                          fontFamily="'DM Mono', monospace"
+                          letterSpacing="0.04em"
+                        >
+                          {item.label}
+                        </Text>
+                      </HStack>
+                    ))}
+                  </HStack>
+                </VStack>
+              </GridItem>
+
+              {/* Dashboard Mockup */}
               <GridItem display={{ base: "none", lg: "block" }}>
                 <Box
                   position="relative"
                   animation={`${float} 6s ease-in-out infinite`}
                 >
-                  {/* Main card */}
-                  <Box
-                    borderRadius="24px"
-                    bg="rgba(255,255,255,0.04)"
-                    border="1px solid rgba(255,255,255,0.1)"
-                    backdropFilter="blur(20px)"
-                    p={6}
-                    shadow="0 40px 80px rgba(0,0,0,0.5)"
-                    overflow="hidden"
-                    position="relative"
-                  >
-                    {/* Fake header */}
-                    <HStack mb={5} spacing={2}>
-                      {["#FF5F57", "#FEBC2E", "#28C840"].map((c) => (
+                  <Box variant="landing-glass">
+                    <Box p={6}>
+                      <HStack mb={5} spacing={2}>
                         <Box
-                          key={c}
                           w="10px"
                           h="10px"
                           borderRadius="full"
-                          bg={c}
+                          bg="#FF5F57"
                         />
-                      ))}
-                      <Box flex={1} />
-                      <Box
-                        px={3}
-                        py={1}
-                        borderRadius="full"
-                        bg="rgba(212,168,67,0.12)"
-                        border="1px solid rgba(212,168,67,0.2)"
-                      >
-                        <Text
-                          fontSize="9px"
-                          color="#D4A843"
-                          fontFamily="'DM Mono', monospace"
-                        >
-                          Leave Dashboard
-                        </Text>
-                      </Box>
-                    </HStack>
-
-                    {/* Balance bars */}
-                    <Text
-                      fontSize="xs"
-                      color="rgba(255,255,255,0.35)"
-                      mb={3}
-                      fontFamily="'DM Mono', monospace"
-                      letterSpacing="0.08em"
-                    >
-                      LEAVE BALANCES — 2025
-                    </Text>
-                    {[
-                      {
-                        label: "Annual Leave",
-                        pct: 72,
-                        color: "#3B82F6",
-                        days: "21.6 days",
-                      },
-                      {
-                        label: "Casual Leave",
-                        pct: 43,
-                        color: "#10B981",
-                        days: "3 days",
-                      },
-                      {
-                        label: "Sick Leave",
-                        pct: 20,
-                        color: "#EF4444",
-                        days: "2 days",
-                      },
-                      {
-                        label: "Study Leave",
-                        pct: 90,
-                        color: "#D4A843",
-                        days: "4 yrs",
-                      },
-                    ].map((item) => (
-                      <Box key={item.label} mb={3.5}>
-                        <Flex justify="space-between" mb={1.5}>
-                          <Text
-                            fontSize="11px"
-                            color="rgba(255,255,255,0.6)"
-                            fontFamily="'Sora', sans-serif"
-                          >
-                            {item.label}
-                          </Text>
-                          <Text
-                            fontSize="11px"
-                            color="rgba(255,255,255,0.35)"
-                            fontFamily="'DM Mono', monospace"
-                          >
-                            {item.days}
-                          </Text>
-                        </Flex>
                         <Box
-                          h="5px"
+                          w="10px"
+                          h="10px"
                           borderRadius="full"
-                          bg="rgba(255,255,255,0.06)"
-                          overflow="hidden"
-                        >
-                          <Box
-                            h="full"
-                            borderRadius="full"
-                            bg={item.color}
-                            w={`${item.pct}%`}
-                            opacity={0.75}
-                          />
-                        </Box>
-                      </Box>
-                    ))}
-
-                    {/* Recent application chip */}
-                    <Box
-                      mt={5}
-                      p={3.5}
-                      borderRadius="12px"
-                      bg="rgba(212,168,67,0.07)"
-                      border="1px solid rgba(212,168,67,0.15)"
-                    >
-                      <Flex justify="space-between" align="center">
-                        <VStack spacing={0.5} align="flex-start">
-                          <Text
-                            fontSize="11px"
-                            fontWeight="700"
-                            color="white"
-                            fontFamily="'Sora', sans-serif"
-                          >
-                            Annual Leave · 5 days
-                          </Text>
-                          <Text
-                            fontSize="10px"
-                            color="rgba(255,255,255,0.4)"
-                            fontFamily="'Lora', serif"
-                          >
-                            Dec 23 — Dec 27, 2025
-                          </Text>
-                        </VStack>
+                          bg="#FEBC2E"
+                        />
                         <Box
-                          px={2.5}
+                          w="10px"
+                          h="10px"
+                          borderRadius="full"
+                          bg="#28C840"
+                        />
+                        <Box flex={1} />
+                        <Box
+                          px={3}
                           py={1}
                           borderRadius="full"
-                          bg="rgba(16,185,129,0.15)"
-                          border="1px solid rgba(16,185,129,0.3)"
+                          bg="landing.brand.glow"
+                          border="1px solid"
+                          borderColor="landing.border.brandLight"
                         >
                           <Text
                             fontSize="9px"
-                            fontWeight="700"
-                            color="#10B981"
+                            color="landing.brand.light"
                             fontFamily="'DM Mono', monospace"
-                            letterSpacing="0.06em"
                           >
-                            APPROVED
+                            Leave Dashboard
                           </Text>
                         </Box>
-                      </Flex>
+                      </HStack>
+
+                      <Text
+                        fontSize="xs"
+                        color="landing.text.muted"
+                        mb={3}
+                        fontFamily="'DM Mono', monospace"
+                        letterSpacing="0.08em"
+                      >
+                        LEAVE BALANCES — 2025
+                      </Text>
+
+                      {LEAVE_BALANCES.map((item) => (
+                        <Box key={item.label} mb={3.5}>
+                          <Flex justify="space-between" mb={1.5}>
+                            <Text
+                              fontSize="11px"
+                              color="landing.text.secondary"
+                              fontFamily="'Sora', sans-serif"
+                            >
+                              {item.label}
+                            </Text>
+                            <Text
+                              fontSize="11px"
+                              color="landing.text.muted"
+                              fontFamily="'DM Mono', monospace"
+                            >
+                              {item.days}
+                            </Text>
+                          </Flex>
+                          <Box
+                            h="5px"
+                            borderRadius="full"
+                            bg="rgba(255,255,255,0.06)"
+                            overflow="hidden"
+                          >
+                            <Box
+                              h="full"
+                              borderRadius="full"
+                              bg={item.color}
+                              w={`${item.pct}%`}
+                              opacity={0.8}
+                            />
+                          </Box>
+                        </Box>
+                      ))}
+
+                      <Box
+                        mt={5}
+                        p={3.5}
+                        borderRadius="12px"
+                        bg="landing.brand.glow"
+                        border="1px solid"
+                        borderColor="landing.border.brandLight"
+                      >
+                        <Flex justify="space-between" align="center">
+                          <VStack spacing={0.5} align="flex-start">
+                            <Text
+                              fontSize="11px"
+                              fontWeight="700"
+                              color="landing.text.primary"
+                              fontFamily="'Sora', sans-serif"
+                            >
+                              Annual Leave · 5 days
+                            </Text>
+                            <Text
+                              fontSize="10px"
+                              color="landing.text.quaternary"
+                              fontFamily="'Lora', serif"
+                            >
+                              Dec 23 — Dec 27, 2025
+                            </Text>
+                          </VStack>
+                          <Box
+                            px={2.5}
+                            py={1}
+                            borderRadius="full"
+                            bg="rgba(0,168,107,0.15)"
+                            border="1px solid"
+                            borderColor="rgba(0,168,107,0.3)"
+                          >
+                            <Text
+                              fontSize="9px"
+                              fontWeight="700"
+                              color="landing.status.success"
+                              fontFamily="'DM Mono', monospace"
+                              letterSpacing="0.06em"
+                            >
+                              APPROVED
+                            </Text>
+                          </Box>
+                        </Flex>
+                      </Box>
                     </Box>
                   </Box>
 
-                  {/* Floating badge — Director approved */}
                   <Box
                     position="absolute"
                     top="-16px"
@@ -769,16 +535,21 @@ export const LandingPage = () => {
                     px={3.5}
                     py={2}
                     borderRadius="12px"
-                    bg="rgba(16,185,129,0.12)"
-                    border="1px solid rgba(16,185,129,0.25)"
+                    bg="rgba(0,168,107,0.12)"
+                    border="1px solid"
+                    borderColor="rgba(0,168,107,0.25)"
                     backdropFilter="blur(12px)"
-                    shadow="0 8px 24px rgba(0,0,0,0.3)"
+                    shadow="landing.shadows.floating"
                   >
                     <HStack spacing={2}>
-                      <Icon as={FiCheckCircle} color="#10B981" boxSize={3.5} />
+                      <Icon
+                        as={FiCheckCircle}
+                        color="landing.status.success"
+                        boxSize={3.5}
+                      />
                       <Text
                         fontSize="10px"
-                        color="#10B981"
+                        color="landing.status.success"
                         fontWeight="600"
                         fontFamily="'DM Mono', monospace"
                       >
@@ -787,7 +558,6 @@ export const LandingPage = () => {
                     </HStack>
                   </Box>
 
-                  {/* Floating badge — pending */}
                   <Box
                     position="absolute"
                     bottom="-14px"
@@ -795,16 +565,21 @@ export const LandingPage = () => {
                     px={3.5}
                     py={2}
                     borderRadius="12px"
-                    bg="rgba(212,168,67,0.1)"
-                    border="1px solid rgba(212,168,67,0.25)"
+                    bg="landing.brand.glow"
+                    border="1px solid"
+                    borderColor="landing.border.brand"
                     backdropFilter="blur(12px)"
-                    shadow="0 8px 24px rgba(0,0,0,0.3)"
+                    shadow="landing.shadows.floating"
                   >
                     <HStack spacing={2}>
-                      <Icon as={FiClock} color="#D4A843" boxSize={3.5} />
+                      <Icon
+                        as={FiClock}
+                        color="landing.brand.light"
+                        boxSize={3.5}
+                      />
                       <Text
                         fontSize="10px"
-                        color="#D4A843"
+                        color="landing.brand.light"
                         fontWeight="600"
                         fontFamily="'DM Mono', monospace"
                       >
@@ -818,68 +593,59 @@ export const LandingPage = () => {
           </Container>
         </Box>
 
-        {/* ── WORKFLOW ── */}
+        {/* Workflow Section */}
         <Box
           id="workflow"
           position="relative"
           zIndex={1}
           py={{ base: 16, md: 24 }}
-          borderTop="1px solid rgba(255,255,255,0.05)"
+          borderTop="1px solid"
+          borderTopColor="landing.border.light"
         >
           <Container maxW="1200px">
             <AnimatedSection>
-              <Flex
-                direction={{ base: "column", md: "row" }}
-                gap={2}
-                align={{ base: "flex-start", md: "center" }}
+              <Text
+                fontSize="10px"
+                fontWeight="600"
+                color="landing.brand.light"
+                letterSpacing="0.18em"
+                textTransform="uppercase"
+                fontFamily="'DM Mono', monospace"
                 mb={3}
               >
-                <Text
-                  fontSize="10px"
-                  fontWeight="600"
-                  color="rgba(212,168,67,0.7)"
-                  letterSpacing="0.18em"
-                  textTransform="uppercase"
-                  fontFamily="'DM Mono', monospace"
-                >
-                  How it works
-                </Text>
-              </Flex>
+                How it works
+              </Text>
               <Heading
+                variant="landing-section"
                 fontSize={{ base: "2xl", md: "3xl" }}
-                fontWeight="800"
-                color="white"
                 mb={3}
-                fontFamily="'Sora', sans-serif"
-                letterSpacing="-0.02em"
               >
-                A clear, two-stage approval flow
+                A clear, three-stage approval flow
               </Heading>
               <Text
                 fontSize="md"
-                color="rgba(255,255,255,0.45)"
+                color="landing.text.quaternary"
                 mb={14}
                 maxW="520px"
                 fontFamily="'Lora', serif"
                 lineHeight="1.7"
               >
                 Every leave request follows a transparent, documented journey
-                from application to final approval — no lost emails, no
-                ambiguity.
+                from application to final approval — no ambiguity.
               </Text>
             </AnimatedSection>
 
             <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={16}>
-              {/* Staff workflow */}
               <AnimatedSection delay={100}>
                 <Box
                   mb={6}
                   pb={4}
-                  borderBottom="1px solid rgba(255,255,255,0.08)"
+                  borderBottom="1px solid"
+                  borderBottomColor="landing.border.light"
                 >
                   <Text
                     fontSize="xs"
-                    color="rgba(212,168,67,0.6)"
+                    color="landing.brand.light"
                     fontFamily="'DM Mono', monospace"
                     letterSpacing="0.14em"
                     textTransform="uppercase"
@@ -890,50 +656,27 @@ export const LandingPage = () => {
                   <Text
                     fontSize="lg"
                     fontWeight="700"
-                    color="white"
+                    color="landing.text.primary"
                     fontFamily="'Sora', sans-serif"
                   >
                     Applying for Leave
                   </Text>
                 </Box>
-
-                <WorkflowStep
-                  number="1"
-                  icon={FiCalendar}
-                  title="Select leave type & dates"
-                  description="Choose from Annual, Casual, Sick, Maternity, Paternity, or Study leave. Working days are calculated automatically, excluding weekends and public holidays."
-                />
-                <WorkflowStep
-                  number="2"
-                  icon={FiFileText}
-                  title="Submit with reason"
-                  description="Provide a reason and review your calculated resumption date before submitting. The system validates against your available balance in real time."
-                />
-                <WorkflowStep
-                  number="3"
-                  icon={FiClock}
-                  title="Track your application"
-                  description="Monitor your application status — Pending Director, Pending HR, Approved, or Rejected — from your personal dashboard at any time."
-                />
-                <WorkflowStep
-                  number="4"
-                  icon={FiCheckCircle}
-                  title="Receive final decision"
-                  description="Once both stages are complete you'll see the final outcome alongside any comments left by the Director or HR team."
-                  isLast
-                />
+                {STAFF_WORKFLOW_STEPS.map((step) => (
+                  <WorkflowStep key={step.number} {...step} />
+                ))}
               </AnimatedSection>
 
-              {/* Approver workflow */}
               <AnimatedSection delay={200}>
                 <Box
                   mb={6}
                   pb={4}
-                  borderBottom="1px solid rgba(255,255,255,0.08)"
+                  borderBottom="1px solid"
+                  borderBottomColor="landing.border.light"
                 >
                   <Text
                     fontSize="xs"
-                    color="rgba(212,168,67,0.6)"
+                    color="landing.brand.light"
                     fontFamily="'DM Mono', monospace"
                     letterSpacing="0.14em"
                     textTransform="uppercase"
@@ -944,56 +687,34 @@ export const LandingPage = () => {
                   <Text
                     fontSize="lg"
                     fontWeight="700"
-                    color="white"
+                    color="landing.text.primary"
                     fontFamily="'Sora', sans-serif"
                   >
                     Reviewing Applications
                   </Text>
                 </Box>
-
-                <WorkflowStep
-                  number="1"
-                  icon={FiUsers}
-                  title="Director reviews first"
-                  description="Department directors review incoming applications, verify team coverage, and either approve — forwarding to HR — or reject with a documented reason."
-                />
-                <WorkflowStep
-                  number="2"
-                  icon={FiShield}
-                  title="HR validates policy"
-                  description="HR administrators verify the application against leave policy, balance availability, and any outstanding obligations before the final approval."
-                />
-                <WorkflowStep
-                  number="3"
-                  icon={FiTrendingUp}
-                  title="Analytics & reporting"
-                  description="HR and Admin access comprehensive dashboards: department utilisation, monthly trends, desired-month submissions, and downloadable PDF reports."
-                />
-                <WorkflowStep
-                  number="4"
-                  icon={FiZap}
-                  title="Manage allocations"
-                  description="Admins can adjust individual leave balances, re-run allocation rules for any year, and manage user accounts, departments, and designations."
-                  isLast
-                />
+                {APPROVER_WORKFLOW_STEPS.map((step) => (
+                  <WorkflowStep key={step.number} {...step} />
+                ))}
               </AnimatedSection>
             </Grid>
           </Container>
         </Box>
 
-        {/* ── BENEFITS ── */}
+        {/* Benefits Section */}
         <Box
           position="relative"
           zIndex={1}
           py={{ base: 16, md: 24 }}
-          borderTop="1px solid rgba(255,255,255,0.05)"
+          borderTop="1px solid"
+          borderTopColor="landing.border.light"
         >
           <Container maxW="1200px">
             <AnimatedSection mb={14}>
               <Text
                 fontSize="10px"
                 fontWeight="600"
-                color="rgba(212,168,67,0.7)"
+                color="landing.brand.light"
                 letterSpacing="0.18em"
                 textTransform="uppercase"
                 fontFamily="'DM Mono', monospace"
@@ -1002,18 +723,15 @@ export const LandingPage = () => {
                 Why it matters
               </Text>
               <Heading
+                variant="landing-section"
                 fontSize={{ base: "2xl", md: "3xl" }}
-                fontWeight="800"
-                color="white"
                 mb={3}
-                fontFamily="'Sora', sans-serif"
-                letterSpacing="-0.02em"
               >
                 Built for how NASENI works
               </Heading>
               <Text
                 fontSize="md"
-                color="rgba(255,255,255,0.45)"
+                color="landing.text.quaternary"
                 maxW="480px"
                 fontFamily="'Lora', serif"
                 lineHeight="1.7"
@@ -1031,50 +749,7 @@ export const LandingPage = () => {
               }}
               gap={5}
             >
-              {[
-                {
-                  icon: FiZap,
-                  title: "Automatic day calculation",
-                  description:
-                    "Working days are computed in real time, skipping Nigerian public holidays and weekends. No manual counting, no errors.",
-                  stat: "0",
-                  statLabel: "Manual calculations needed",
-                },
-                {
-                  icon: FiShield,
-                  title: "Role-based access control",
-                  description:
-                    "Staff, Directors, HR Admins, and System Admins each see only what they need. Data privacy and policy compliance by design.",
-                  stat: "4",
-                  statLabel: "Distinct access roles",
-                },
-                {
-                  icon: FiFileText,
-                  title: "PDF export & print",
-                  description:
-                    "Generate a professional leave application PDF for any approved record — individual or bulk — directly from your browser.",
-                },
-                {
-                  icon: FiTrendingUp,
-                  title: "Live analytics",
-                  description:
-                    "Department utilisation rates, monthly application trends, and leave-type breakdowns — all updated in real time.",
-                },
-                {
-                  icon: FiCalendar,
-                  title: "Desired months planning",
-                  description:
-                    "Staff submit their two preferred annual leave months ahead of time, giving management clear visibility for workforce planning.",
-                  stat: "2",
-                  statLabel: "Preferred months per staff",
-                },
-                {
-                  icon: FiUsers,
-                  title: "Full user management",
-                  description:
-                    "Admins can create accounts, assign departments and designations, toggle access, and re-run leave allocations for any year.",
-                },
-              ].map((card, i) => (
+              {BENEFIT_CARDS.map((card, i) => (
                 <AnimatedSection key={card.title} delay={i * 60}>
                   <BenefitCard {...card} />
                 </AnimatedSection>
@@ -1083,12 +758,13 @@ export const LandingPage = () => {
           </Container>
         </Box>
 
-        {/* ── LEAVE TYPES STRIP ── */}
+        {/* Leave Types Strip */}
         <Box
           position="relative"
           zIndex={1}
           py={{ base: 12, md: 16 }}
-          borderTop="1px solid rgba(255,255,255,0.05)"
+          borderTop="1px solid"
+          borderTopColor="landing.border.light"
           overflow="hidden"
         >
           <Container maxW="1200px">
@@ -1096,7 +772,7 @@ export const LandingPage = () => {
               <Text
                 fontSize="10px"
                 fontWeight="600"
-                color="rgba(212,168,67,0.7)"
+                color="landing.brand.light"
                 letterSpacing="0.18em"
                 textTransform="uppercase"
                 fontFamily="'DM Mono', monospace"
@@ -1113,25 +789,19 @@ export const LandingPage = () => {
               }}
               gap={3}
             >
-              {[
-                { name: "Annual", days: "30 days/yr", color: "#3B82F6" },
-                { name: "Casual", days: "7 days/yr", color: "#10B981" },
-                { name: "Sick", days: "10 days/yr", color: "#EF4444" },
-                { name: "Maternity", days: "16 weeks", color: "#EC4899" },
-                { name: "Paternity", days: "14 days", color: "#06B6D4" },
-                { name: "Study", days: "BSc · MSc · PhD", color: "#D4A843" },
-              ].map((lt, i) => (
+              {LEAVE_TYPES.map((lt, i) => (
                 <AnimatedSection key={lt.name} delay={i * 50}>
                   <Box
                     p={4}
                     borderRadius="14px"
                     bg="rgba(255,255,255,0.025)"
-                    border="1px solid rgba(255,255,255,0.06)"
+                    border="1px solid"
+                    borderColor="landing.border.medium"
                     textAlign="center"
                     transition="all 0.25s ease"
                     _hover={{
-                      bg: "rgba(255,255,255,0.05)",
-                      borderColor: `${lt.color}44`,
+                      bg: "landing.brand.glow",
+                      borderColor: "landing.border.brand",
                       transform: "translateY(-3px)",
                     }}
                   >
@@ -1142,12 +812,11 @@ export const LandingPage = () => {
                       bg={lt.color}
                       mx="auto"
                       mb={3}
-                      opacity={0.8}
                     />
                     <Text
                       fontSize="xs"
                       fontWeight="700"
-                      color="white"
+                      color="landing.text.primary"
                       fontFamily="'Sora', sans-serif"
                       mb={1}
                     >
@@ -1155,7 +824,7 @@ export const LandingPage = () => {
                     </Text>
                     <Text
                       fontSize="10px"
-                      color="rgba(255,255,255,0.35)"
+                      color="landing.text.muted"
                       fontFamily="'DM Mono', monospace"
                     >
                       {lt.days}
@@ -1167,12 +836,13 @@ export const LandingPage = () => {
           </Container>
         </Box>
 
-        {/* ── CTA ── */}
+        {/* CTA Section */}
         <Box
           position="relative"
           zIndex={1}
           py={{ base: 16, md: 24 }}
-          borderTop="1px solid rgba(255,255,255,0.05)"
+          borderTop="1px solid"
+          borderTopColor="landing.border.light"
         >
           <Container maxW="800px" textAlign="center">
             <AnimatedSection>
@@ -1183,31 +853,27 @@ export const LandingPage = () => {
                 w="64px"
                 h="64px"
                 borderRadius="20px"
-                bg="rgba(212,168,67,0.1)"
-                border="1px solid rgba(212,168,67,0.2)"
+                bg="landing.brand.glow"
+                border="1px solid"
+                borderColor="landing.border.brandLight"
                 mb={8}
                 mx="auto"
               >
-                <Icon as={FiZap} color="#D4A843" boxSize={6} />
+                <Icon as={FiZap} color="landing.brand.light" boxSize={6} />
               </Box>
 
               <Heading
+                variant="landing-section"
                 fontSize={{ base: "2xl", md: "4xl" }}
-                fontWeight="800"
-                color="white"
                 mb={5}
-                fontFamily="'Sora', sans-serif"
-                letterSpacing="-0.02em"
                 lineHeight={1.15}
               >
-                Ready to manage leave
-                <br />
-                the modern way?
+                Ready to go on leave?
               </Heading>
 
               <Text
                 fontSize="md"
-                color="rgba(255,255,255,0.45)"
+                color="landing.text.quaternary"
                 mb={10}
                 fontFamily="'Lora', serif"
                 lineHeight="1.7"
@@ -1221,49 +887,31 @@ export const LandingPage = () => {
               <Button
                 size="lg"
                 onClick={onOpen}
-                bg="linear-gradient(135deg, #D4A843 0%, #B8862A 100%)"
-                color="#0D1B3E"
-                fontFamily="'Sora', sans-serif"
-                fontWeight="700"
-                fontSize="sm"
-                letterSpacing="0.05em"
+                variant="landing-brand"
                 px={10}
                 h="56px"
-                borderRadius="14px"
-                shadow="0 8px 32px rgba(212,168,67,0.4)"
-                transition="all 0.25s ease"
-                _hover={{
-                  transform: "translateY(-3px)",
-                  shadow: "0 16px 40px rgba(212,168,67,0.55)",
-                  bg: "linear-gradient(135deg, #E0B54F 0%, #C49130 100%)",
-                }}
-                _active={{ transform: "translateY(0)" }}
                 rightIcon={<FiArrowRight />}
               >
                 Sign in to NASENI Portal
               </Button>
 
-              {/* Checklist */}
               <Flex
                 justify="center"
                 gap={{ base: 4, md: 8 }}
                 mt={10}
                 flexWrap="wrap"
               >
-                {[
-                  "Secure Supabase auth",
-                  "Role-based access",
-                  "Data stays private",
-                ].map((item) => (
+                {CTA_CHECKLIST.map((item) => (
                   <HStack key={item} spacing={2}>
                     <Icon
                       as={FiCheck}
-                      color="rgba(212,168,67,0.6)"
+                      color="landing.brand.light"
                       boxSize={3}
+                      opacity={0.7}
                     />
                     <Text
                       fontSize="xs"
-                      color="rgba(255,255,255,0.35)"
+                      color="landing.text.muted"
                       fontFamily="'DM Mono', monospace"
                       letterSpacing="0.04em"
                     >
@@ -1276,49 +924,23 @@ export const LandingPage = () => {
           </Container>
         </Box>
 
-        {/* ── FOOTER ── */}
+        {/* Footer */}
         <Box
-          borderTop="1px solid rgba(255,255,255,0.06)"
+          borderTop="1px solid"
+          borderTopColor="landing.border.light"
           py={8}
           position="relative"
           zIndex={1}
         >
           <Container maxW="1200px">
             <Flex
-              justify="space-between"
+              justify="center"
               align="center"
               direction={{ base: "column", md: "row" }}
-              gap={4}
             >
-              <HStack spacing={3}>
-                <Box
-                  w="28px"
-                  h="28px"
-                  borderRadius="8px"
-                  bg="rgba(212,168,67,0.1)"
-                  border="1px solid rgba(212,168,67,0.15)"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Icon
-                    as={FiLayers}
-                    color="rgba(212,168,67,0.6)"
-                    boxSize={3}
-                  />
-                </Box>
-                <Text
-                  fontSize="xs"
-                  color="rgba(255,255,255,0.25)"
-                  fontFamily="'DM Mono', monospace"
-                  letterSpacing="0.06em"
-                >
-                  NASENI Leave Management System
-                </Text>
-              </HStack>
               <Text
                 fontSize="xs"
-                color="rgba(255,255,255,0.2)"
+                color="landing.text.subtle"
                 fontFamily="'DM Mono', monospace"
                 letterSpacing="0.04em"
               >
@@ -1330,24 +952,20 @@ export const LandingPage = () => {
         </Box>
       </Box>
 
-      {/* ── LOGIN MODAL ── */}
+      {/* Login Modal */}
       <Modal isOpen={isOpen} onClose={onClose} isCentered size="md">
-        <ModalOverlay backdropFilter="blur(16px)" bg="rgba(8,15,34,0.85)" />
+        <ModalOverlay backdropFilter="blur(16px)" bg="landing.bg.overlay" />
         <ModalContent
-          bg="#0D1B3E"
-          border="1px solid rgba(255,255,255,0.1)"
+          bg="landing.bg.secondary"
+          border="1px solid"
+          borderColor="landing.border.strong"
           borderRadius="20px"
           overflow="hidden"
           mx={4}
         >
-          {/* Gold accent line */}
-          <Box
-            h="3px"
-            bgGradient="linear(to-r, transparent, #D4A843, transparent)"
-          />
-          <ModalCloseButton color="rgba(255,255,255,0.4)" top={4} right={4} />
+          <Box h="3px" bgGradient="landing.gradients.modalAccent" />
+          <ModalCloseButton color="landing.text.quaternary" top={4} right={4} />
           <ModalBody p={0}>
-            {/* Override LoginForm styles via CSS scoping */}
             <Box
               sx={{
                 "& > div": {
@@ -1357,28 +975,29 @@ export const LandingPage = () => {
                   borderWidth: 0,
                   p: 8,
                 },
-                "& label": { color: "rgba(255,255,255,0.7)" },
+                "& label": { color: "landing.text.secondary" },
                 "& input": {
                   bg: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  color: "white",
+                  border: "1px solid",
+                  borderColor: "landing.border.strong",
+                  color: "landing.text.primary",
                   _focus: {
-                    borderColor: "rgba(212,168,67,0.6)",
-                    boxShadow: "0 0 0 1px rgba(212,168,67,0.3)",
+                    borderColor: "landing.border.brandStrong",
+                    boxShadow: "0 0 0 1px rgba(64,126,189,0.3)",
                   },
-                  _placeholder: { color: "rgba(255,255,255,0.25)" },
+                  _placeholder: { color: "landing.text.subtle" },
                 },
                 "& h2, & h3": {
-                  color: "white",
+                  color: "landing.text.primary",
                   fontFamily: "'Sora', sans-serif",
                 },
-                "& p": { color: "rgba(255,255,255,0.45)" },
+                "& p": { color: "landing.text.quaternary" },
                 "& button[type='submit']": {
-                  bg: "linear-gradient(135deg, #D4A843 0%, #B8862A 100%)",
-                  color: "#0D1B3E",
+                  bg: "landing.gradients.brand",
+                  color: "white",
                   fontWeight: 700,
                   _hover: {
-                    bg: "linear-gradient(135deg, #E0B54F 0%, #C49130 100%)",
+                    bg: "landing.gradients.brandHover",
                     transform: "translateY(-1px)",
                   },
                 },
@@ -1392,3 +1011,5 @@ export const LandingPage = () => {
     </>
   );
 };
+
+export default LandingPage;

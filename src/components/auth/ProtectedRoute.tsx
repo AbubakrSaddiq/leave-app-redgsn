@@ -18,8 +18,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // 1. Loading state while checking session
   if (isLoading) {
     return (
-      <Center h="100vh">
-        <VStack spacing={4}>
+      <Center h="100vh" w="100%">
+        <VStack spacing={4} align="center">
           <Spinner size="xl" color="blue.500" thickness="4px" />
           <Text fontWeight="medium" color="gray.600">
             Verifying session...
@@ -32,12 +32,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // 2. Not logged in: Show Login Form instead of the page
   if (!profile) {
     return (
-      <Center h="100vh" bg="gray.50">
-        <Box w="full" maxW="400px" p={4}>
-          {/* <LoginForm /> */}
-          <LandingPage />
-        </Box>
-      </Center>
+      <Box w="100%" minH="100vh">
+        {/* <LoginForm /> */}
+        <LandingPage />
+      </Box>
     );
   }
 

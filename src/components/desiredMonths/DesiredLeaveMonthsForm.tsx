@@ -2,7 +2,7 @@
 // Desired Leave Months Form Component (2 MONTHS ONLY)
 // ============================================
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -24,23 +24,23 @@ import {
   Divider,
   HStack,
   Progress,
-} from '@chakra-ui/react';
-import { FiCalendar, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
-import { useSubmitDesiredMonths } from '@/hooks/useDesiredLeaveMonths';
+} from "@chakra-ui/react";
+import { FiCalendar, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
+import { useSubmitDesiredMonths } from "@/hooks/useDesiredLeaveMonths";
 
 const MONTHS = [
-  { value: 1, label: 'January', shortLabel: 'Jan' },
-  { value: 2, label: 'February', shortLabel: 'Feb' },
-  { value: 3, label: 'March', shortLabel: 'Mar' },
-  { value: 4, label: 'April', shortLabel: 'Apr' },
-  { value: 5, label: 'May', shortLabel: 'May' },
-  { value: 6, label: 'June', shortLabel: 'Jun' },
-  { value: 7, label: 'July', shortLabel: 'Jul' },
-  { value: 8, label: 'August', shortLabel: 'Aug' },
-  { value: 9, label: 'September', shortLabel: 'Sep' },
-  { value: 10, label: 'October', shortLabel: 'Oct' },
-  { value: 11, label: 'November', shortLabel: 'Nov' },
-  { value: 12, label: 'December', shortLabel: 'Dec' },
+  { value: 1, label: "January", shortLabel: "Jan" },
+  { value: 2, label: "February", shortLabel: "Feb" },
+  { value: 3, label: "March", shortLabel: "Mar" },
+  { value: 4, label: "April", shortLabel: "Apr" },
+  { value: 5, label: "May", shortLabel: "May" },
+  { value: 6, label: "June", shortLabel: "Jun" },
+  { value: 7, label: "July", shortLabel: "Jul" },
+  { value: 8, label: "August", shortLabel: "Aug" },
+  { value: 9, label: "September", shortLabel: "Sep" },
+  { value: 10, label: "October", shortLabel: "Oct" },
+  { value: 11, label: "November", shortLabel: "Nov" },
+  { value: 12, label: "December", shortLabel: "Dec" },
 ];
 
 interface DesiredLeaveMonthsFormProps {
@@ -129,17 +129,19 @@ export const DesiredLeaveMonthsForm: React.FC<DesiredLeaveMonthsFormProps> = ({
                 <AlertDescription fontSize="xs">
                   <VStack align="start" spacing={1}>
                     <Text>
-                      • Select <strong>exactly 2 months</strong> for your annual leave
+                      • Select <strong>exactly 2 months</strong> for your annual
+                      leave
                     </Text>
                     <Text>
-                      • This is a <strong>one-time submission</strong> and cannot be
-                      changed later
+                      • This is a <strong>one-time submission</strong> and
+                      cannot be changed later
                     </Text>
                     <Text>
-                      • Your annual leave applications must fall within these 2 months
+                      • Your annual leave applications must fall within these 2
+                      months
                     </Text>
                     <Text>
-                      • This restriction applies only to{' '}
+                      • This restriction applies only to{" "}
                       <strong>annual leave</strong>, not other leave types
                     </Text>
                   </VStack>
@@ -150,13 +152,17 @@ export const DesiredLeaveMonthsForm: React.FC<DesiredLeaveMonthsFormProps> = ({
             {/* Selection Progress */}
             <Box
               p={4}
-              bg={selectionComplete ? 'green.50' : 'blue.50'}
+              bg={selectionComplete ? "green.50" : "blue.50"}
               borderRadius="lg"
               borderLeft="4px solid"
-              borderLeftColor={selectionComplete ? 'green.400' : 'blue.400'}
+              borderLeftColor={selectionComplete ? "green.400" : "blue.400"}
             >
               <HStack justify="space-between" mb={3}>
-                <Text fontSize="sm" fontWeight="bold" color={selectionComplete ? 'green.900' : 'blue.900'}>
+                <Text
+                  fontSize="sm"
+                  fontWeight="bold"
+                  color={selectionComplete ? "green.900" : "blue.900"}
+                >
                   Selection Progress: {selectedMonths.length}/2 Months
                 </Text>
                 {selectionComplete && (
@@ -168,10 +174,10 @@ export const DesiredLeaveMonthsForm: React.FC<DesiredLeaveMonthsFormProps> = ({
                   </Badge>
                 )}
               </HStack>
-              
-              <Progress 
-                value={progressPercent} 
-                colorScheme={selectionComplete ? 'green' : 'blue'}
+
+              <Progress
+                value={progressPercent}
+                colorScheme={selectionComplete ? "green" : "blue"}
                 size="sm"
                 borderRadius="full"
                 mb={3}
@@ -188,7 +194,7 @@ export const DesiredLeaveMonthsForm: React.FC<DesiredLeaveMonthsFormProps> = ({
                       return (
                         <Badge
                           key={month}
-                          colorScheme={selectionComplete ? 'green' : 'blue'}
+                          colorScheme={selectionComplete ? "green" : "blue"}
                           px={3}
                           py={1}
                           borderRadius="md"
@@ -212,9 +218,12 @@ export const DesiredLeaveMonthsForm: React.FC<DesiredLeaveMonthsFormProps> = ({
                 💡 How to Select:
               </Text>
               <Text fontSize="xs" color="purple.800">
-                {selectedMonths.length === 0 && 'Click on any 2 months to select them.'}
-                {selectedMonths.length === 1 && 'Click on 1 more month to complete your selection.'}
-                {selectedMonths.length === 2 && 'Selection complete! Click a selected month to change it, or submit your choice.'}
+                {selectedMonths.length === 0 &&
+                  "Click on any 2 months to select them."}
+                {selectedMonths.length === 1 &&
+                  "Click on 1 more month to complete your selection."}
+                {selectedMonths.length === 2 &&
+                  "Selection complete! Click a selected month to change it, or submit your choice."}
               </Text>
             </Box>
 
@@ -227,7 +236,7 @@ export const DesiredLeaveMonthsForm: React.FC<DesiredLeaveMonthsFormProps> = ({
                 {MONTHS.map((month) => {
                   const isSelected = selectedMonths.includes(month.value);
                   const canSelect = selectedMonths.length < 2 || isSelected;
-                  
+
                   return (
                     <Box
                       key={month.value}
@@ -237,29 +246,43 @@ export const DesiredLeaveMonthsForm: React.FC<DesiredLeaveMonthsFormProps> = ({
                       p={4}
                       borderRadius="lg"
                       borderWidth="2px"
-                      borderColor={isSelected ? 'blue.400' : canSelect ? 'gray.200' : 'gray.100'}
-                      bg={isSelected ? 'blue.50' : canSelect ? 'white' : 'gray.50'}
+                      borderColor={
+                        isSelected
+                          ? "blue.400"
+                          : canSelect
+                            ? "gray.200"
+                            : "gray.100"
+                      }
+                      bg={
+                        isSelected ? "blue.50" : canSelect ? "white" : "gray.50"
+                      }
                       transition="all 0.2s"
                       _hover={{
-                        borderColor: isSelected ? 'blue.500' : canSelect ? 'blue.300' : 'gray.200',
-                        transform: canSelect ? 'translateY(-2px)' : 'none',
-                        shadow: canSelect ? 'md' : 'none',
+                        borderColor: isSelected
+                          ? "blue.500"
+                          : canSelect
+                            ? "blue.300"
+                            : "gray.200",
+                        transform: canSelect ? "translateY(-2px)" : "none",
+                        shadow: canSelect ? "md" : "none",
                       }}
-                      _active={{ transform: canSelect ? 'scale(0.98)' : 'none' }}
-                      cursor={canSelect ? 'pointer' : 'not-allowed'}
+                      _active={{
+                        transform: canSelect ? "scale(0.98)" : "none",
+                      }}
+                      cursor={canSelect ? "pointer" : "not-allowed"}
                       opacity={canSelect ? 1 : 0.5}
                       position="relative"
                     >
                       <VStack spacing={2}>
                         <Icon
                           as={isSelected ? FiCheckCircle : FiCalendar}
-                          color={isSelected ? 'blue.500' : 'gray.400'}
+                          color={isSelected ? "blue.500" : "gray.400"}
                           boxSize={5}
                         />
                         <Text
                           fontSize="sm"
-                          fontWeight={isSelected ? 'bold' : 'medium'}
-                          color={isSelected ? 'blue.700' : 'gray.700'}
+                          fontWeight={isSelected ? "bold" : "medium"}
+                          color={isSelected ? "blue.700" : "gray.700"}
                         >
                           {month.label}
                         </Text>
@@ -280,8 +303,10 @@ export const DesiredLeaveMonthsForm: React.FC<DesiredLeaveMonthsFormProps> = ({
               <Alert status="warning" borderRadius="md">
                 <AlertIcon as={FiAlertCircle} />
                 <AlertDescription fontSize="sm">
-                  {selectedMonths.length === 0 && 'Please select 2 months to continue'}
-                  {selectedMonths.length === 1 && 'Please select 1 more month (2 required)'}
+                  {selectedMonths.length === 0 &&
+                    "Please select 2 months to continue"}
+                  {selectedMonths.length === 1 &&
+                    "Please select 1 more month (2 required)"}
                 </AlertDescription>
               </Alert>
             )}
