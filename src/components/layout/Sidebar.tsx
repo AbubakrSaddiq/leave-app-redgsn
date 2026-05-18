@@ -19,6 +19,7 @@ import {
   Button,
   useBreakpointValue,
   Tooltip,
+  Image,
 } from "@chakra-ui/react";
 import {
   FiHome,
@@ -96,9 +97,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <Box width="100%" px={4} mb={6}>
           <HStack spacing={3} justify={isCollapsed ? "center" : "flex-start"}>
             <Box
-              width="48px"
-              height="48px"
-              bg="naseni.primary"
+              width="38px"
+              height="38px"
               borderRadius="lg"
               display="flex"
               alignItems="center"
@@ -108,7 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               fontSize="lg"
               flexShrink={0}
             >
-              N
+              <Image src="/logo.png" alt="NASENI Logo" />
             </Box>
             {!isCollapsed && (
               <VStack spacing={0} align="flex-start">

@@ -18,6 +18,8 @@ import {
   Text,
   VStack,
   useDisclosure,
+  Image,
+  Stack,
 } from "@chakra-ui/react";
 
 import {
@@ -44,10 +46,10 @@ const TRUST_SIGNALS = [
 ];
 
 const LEAVE_BALANCES = [
-  { label: "Annual Leave", pct: 72, color: "#003366", days: "21.6 days" },
-  { label: "Casual Leave", pct: 43, color: "#407ebd", days: "3 days" },
-  { label: "Sick Leave", pct: 20, color: "#00a86b", days: "2 days" },
-  { label: "Study Leave", pct: 90, color: "#407ebd", days: "4 yrs" },
+  { label: "Annual Leave", pct: 72, color: "#3B82F6", days: "21 days" },
+  { label: "Casual Leave", pct: 43, color: "#10B981", days: "3 days" },
+  { label: "Sick Leave", pct: 20, color: "#EF4444", days: "2 days" },
+  { label: "Study Leave", pct: 90, color: "#D4A843", days: "4 yrs" },
 ];
 
 const STAFF_WORKFLOW_STEPS = [
@@ -102,7 +104,7 @@ const APPROVER_WORKFLOW_STEPS = [
     icon: FiZap,
     title: "Analytics & reporting",
     description:
-      "HR and Admin access comprehensive dashboards: department utilisation, monthly trends, desired-month submissions, and downloadable PDF reports.",
+      "HR access comprehensive dashboards: department utilisation, desired-month submissions, and downloadable PDF reports.",
   },
   {
     number: "4",
@@ -127,7 +129,7 @@ const BENEFIT_CARDS = [
     icon: FiCheckCircle,
     title: "Role-based access control",
     description:
-      "Staff, Directors, HR Admins, and System Admins each see only what they need. Data privacy and policy compliance by design.",
+      "Staff, Directors and HR Admins each see only what they need. Data privacy and policy compliance by design.",
     stat: "3",
     statLabel: "Distinct access roles",
   },
@@ -154,12 +156,12 @@ const BENEFIT_CARDS = [
 ];
 
 const LEAVE_TYPES = [
-  { name: "Annual", days: "30 days/yr", color: "#003366" },
-  { name: "Casual", days: "7 days/yr", color: "#407ebd" },
-  { name: "Sick", days: "10 days/yr", color: "#00a86b" },
-  { name: "Maternity", days: "16 weeks", color: "#407ebd" },
-  { name: "Paternity", days: "14 days", color: "#003366" },
-  { name: "Study", days: "BSc · MSc · PhD", color: "#407ebd" },
+  { name: "Annual", days: "30 days/yr", color: "#3B82F6" },
+  { name: "Casual", days: "7 days/yr", color: "#10B981" },
+  { name: "Sick", days: "10 days/yr", color: "#EF4444" },
+  { name: "Maternity", days: "16 weeks", color: "#bd409a" },
+  { name: "Paternity", days: "14 days", color: "#66004e" },
+  { name: "Study", days: "BSc · MSc · PhD", color: "#D4A843" },
 ];
 
 const CTA_CHECKLIST = [
@@ -238,13 +240,11 @@ export const LandingPage = () => {
                   w="36px"
                   h="36px"
                   borderRadius="10px"
-                  bg="landing.gradients.brand"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
-                  shadow="landing.shadows.brand"
                 >
-                  <Icon as={FiLayers} color="white" boxSize={4} />
+                  <Image src="/logo.png" alt="NASENI Logo" />
                 </Box>
                 <VStack spacing={0} align="flex-start">
                   <Text
@@ -285,97 +285,116 @@ export const LandingPage = () => {
         <Box
           position="relative"
           zIndex={1}
-          pt={{ base: 20, md: 28 }}
-          pb={{ base: 16, md: 24 }}
+          pt={{ base: 12, sm: 16, md: 20, lg: 28 }}
+          pb={{ base: 12, sm: 16, md: 20, lg: 24 }}
+          px={{ base: 4, sm: 6, md: 8, lg: 10 }}
         >
-          <Container maxW="1400px" px={{ base: 6, md: 10 }}>
+          <Container maxW="1400px" px={{ base: 0, md: 4, lg: 6 }}>
+            {/* Responsive grid: 1 column on mobile, 3 columns on desktop */}
             <Grid
-              templateColumns="repeat(3, 1fr)"
-              gap={{ base: 14, lg: 20 }}
+              templateColumns={{ base: "1fr", lg: "repeat(3, 1fr)" }}
+              gap={{ base: 8, md: 10, lg: 20 }}
               alignItems="center"
-              minH="80vh"
+              minH={{ lg: "80vh" }}
             >
-              <GridItem display="flex" alignItems="center">
+              {/* Hero Heading - First on mobile */}
+              <GridItem
+                order={{ base: 1, lg: 1 }}
+                textAlign={{ base: "center", lg: "left" }}
+              >
                 <Heading
                   variant="landing-hero"
                   as="h1"
-                  fontSize={{ base: "3xl", md: "4xl", lg: "5xl" }}
-                  lineHeight="1.12"
-                  mb={6}
-                  animation={`${fadeUp} 0.7s ease 0.1s both`}
+                  fontSize={{
+                    base: "3xl", // 30px on very small
+                    sm: "4xl", // 36px on small
+                    md: "5xl", // 48px on medium
+                    lg: "5xl", // 60px on large
+                  }}
+                  lineHeight={{ base: "1.2", md: "1.15", lg: "1.12" }}
+                  mb={{ base: 4, md: 6 }}
+                  maxW={{ lg: "90%" }}
                 >
                   Streamlined leave
                   <br />
-                  <Box
-                    as="span"
-                    bgGradient="landing.gradients.brandShimmer"
-                    bgClip="text"
-                    backgroundSize="200% auto"
-                    animation={`${shimmer} 4s linear infinite`}
-                  >
-                    for every NASENI
-                  </Box>
-                  <br />
-                  staff member.
+                  for every NASENI staff member.
                 </Heading>
               </GridItem>
 
-              <GridItem display="flex" alignItems="center">
-                <VStack>
+              {/* Hero Content (Text + Buttons) - Second on mobile */}
+              <GridItem
+                order={{ base: 2, lg: 2 }}
+                display="flex"
+                alignItems="center"
+                justifyContent={{ base: "center", lg: "flex-start" }}
+              >
+                <VStack
+                  spacing={{ base: 6, md: 8, lg: 10 }}
+                  maxW={{ base: "100%", md: "90%", lg: "90%" }}
+                  mx={{ base: "auto", lg: 0 }}
+                >
                   <Text
-                    fontSize={{ base: "md", md: "lg" }}
+                    fontSize={{ base: "sm", sm: "md", md: "lg" }}
                     color="landing.text.tertiary"
-                    lineHeight="1.75"
-                    mb={10}
-                    maxW="480px"
-                    animation={`${fadeUp} 0.7s ease 0.2s both`}
+                    lineHeight={{ base: "1.6", md: "1.7", lg: "1.75" }}
+                    textAlign={{ base: "center", lg: "left" }}
                     fontFamily="'Lora', serif"
+                    maxW={{ base: "100%", md: "90%", lg: "100%" }}
                   >
                     A centralized platform replacing paper forms and email
                     chains. Apply, track, and approve leave requests —
                     transparently and efficiently — across all departments.
                   </Text>
-                  <HStack
-                    spacing={4}
-                    animation={`${fadeUp} 0.7s ease 0.3s both`}
+
+                  {/* Responsive buttons: Stack on mobile, row on tablet+ */}
+                  <Stack
+                    direction={{ base: "column", sm: "row" }}
+                    spacing={{ base: 3, sm: 4 }}
+                    width={{ base: "100%", sm: "auto" }}
+                    justify={{ base: "center", lg: "flex-start" }}
                   >
                     <Button
-                      size="lg"
                       onClick={onOpen}
                       variant="landing-brand"
-                      px={8}
-                      h="52px"
+                      size={{ base: "md", md: "lg" }}
+                      px={{ base: 6, md: 8 }}
+                      h={{ base: "48px", md: "52px" }}
                       rightIcon={<FiArrowRight />}
+                      width={{ base: "100%", sm: "auto" }}
                     >
-                      Access Dashboard
+                      Sign In
                     </Button>
 
                     <Button
-                      size="lg"
                       as="a"
                       href="#workflow"
                       variant="landing-ghost"
-                      h="52px"
+                      size={{ base: "md", md: "lg" }}
+                      h={{ base: "48px", md: "52px" }}
+                      width={{ base: "100%", sm: "auto" }}
                     >
                       See how it works
                     </Button>
-                  </HStack>
+                  </Stack>
 
-                  <HStack
-                    mt={10}
-                    spacing={6}
-                    animation={`${fadeUp} 0.7s ease 0.4s both`}
+                  {/* Trust signals - wrap on mobile */}
+                  <Stack
+                    direction={{ base: "column", sm: "row" }}
+                    spacing={{ base: 3, sm: 6 }}
+                    mt={{ base: 2, md: 4 }}
+                    justify={{ base: "center", lg: "flex-start" }}
+                    align={{ base: "center", sm: "center" }}
                   >
                     {TRUST_SIGNALS.map((item) => (
                       <HStack key={item.label} spacing={1.5}>
                         <Icon
                           as={item.icon}
                           color="landing.brand.light"
-                          boxSize={3.5}
+                          boxSize={{ base: 3, md: 3.5 }}
                           opacity={0.7}
                         />
                         <Text
-                          fontSize="xs"
+                          fontSize={{ base: "2xs", sm: "xs" }}
                           color="landing.text.muted"
                           fontFamily="'DM Mono', monospace"
                           letterSpacing="0.04em"
@@ -384,12 +403,15 @@ export const LandingPage = () => {
                         </Text>
                       </HStack>
                     ))}
-                  </HStack>
+                  </Stack>
                 </VStack>
               </GridItem>
 
-              {/* Dashboard Mockup */}
-              <GridItem display={{ base: "none", lg: "block" }}>
+              {/* Dashboard Mockup - Third on mobile (hidden on small screens) */}
+              <GridItem
+                order={{ base: 3, lg: 3 }}
+                display={{ base: "none", lg: "block" }}
+              >
                 <Box
                   position="relative"
                   animation={`${float} 6s ease-in-out infinite`}

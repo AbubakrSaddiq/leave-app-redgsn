@@ -2,7 +2,7 @@
 // Balance Dashboard Component
 // ============================================
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Grid,
@@ -20,9 +20,9 @@ import {
   StatNumber,
   StatHelpText,
   StatGroup,
-} from '@chakra-ui/react';
-import { useMyLeaveBalances } from '@/hooks/useLeaveBalance';
-import { BalanceCard } from './BalanceCard';
+} from "@chakra-ui/react";
+import { useMyLeaveBalances } from "@/hooks/useLeaveBalance";
+import { BalanceCard } from "./BalanceCard";
 
 export const BalanceDashboard: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -58,7 +58,8 @@ export const BalanceDashboard: React.FC = () => {
       <Alert status="info" borderRadius="md">
         <AlertIcon />
         <AlertDescription>
-          No leave balances found for {selectedYear}. Contact HR to allocate your leave.
+          No leave balances found for {selectedYear}. Contact HR to allocate
+          your leave.
         </AlertDescription>
       </Alert>
     );
@@ -108,7 +109,7 @@ export const BalanceDashboard: React.FC = () => {
             <StatHelpText>
               {data.summary.total_allocated > 0
                 ? `${((data.summary.total_used / data.summary.total_allocated) * 100).toFixed(1)}% utilized`
-                : 'N/A'}
+                : "N/A"}
             </StatHelpText>
           </Stat>
 
@@ -122,20 +123,23 @@ export const BalanceDashboard: React.FC = () => {
         </StatGroup>
       </Box>
 
-      {data.balances.some((b) => b.available_days > 0 && b.available_days <= 5) && (
+      {data.balances.some(
+        (b) => b.available_days > 0 && b.available_days <= 5,
+      ) && (
         <Alert status="warning" borderRadius="md">
           <AlertIcon />
           <AlertDescription>
-            You have low balance on some leave types. Consider planning your leave.
+            You have low balance on some leave types. Consider planning your
+            leave.
           </AlertDescription>
         </Alert>
       )}
 
       <Grid
         templateColumns={{
-          base: '1fr',
-          md: 'repeat(2, 1fr)',
-          lg: 'repeat(3, 1fr)',
+          base: "1fr",
+          md: "repeat(2, 1fr)",
+          lg: "repeat(3, 1fr)",
         }}
         gap={6}
       >
