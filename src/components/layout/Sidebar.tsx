@@ -189,6 +189,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           >
                             {profile.role}
                           </Text>
+                          <Text
+                            fontSize="11px"
+                            color="naseni.gray.500"
+                            textTransform="capitalize"
+                            noOfLines={1}
+                          >
+                            {/* {profile.department.code} */}
+                          </Text>
                         </VStack>
                         <Icon
                           as={FiChevronDown}

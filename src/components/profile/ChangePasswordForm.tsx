@@ -1,288 +1,235 @@
 // ============================================
-// Change Password Form Component
+// Change Password Form Component - Fully Responsive
+
 // ============================================
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  Box,
   Card,
   CardBody,
   VStack,
+  Heading,
   FormControl,
   FormLabel,
   Input,
-  InputGroup,
-  InputRightElement,
-  IconButton,
-  Button,
   FormErrorMessage,
-  FormHelperText,
+  Button,
+  useToast,
+  Box,
+  Divider,
   Text,
-  Progress,
-  List,
-  ListItem,
-  ListIcon,
+  HStack,
+  Icon,
   Alert,
   AlertIcon,
-  AlertTitle,
   AlertDescription,
-  Heading,
-  Divider,
-} from '@chakra-ui/react';
-import { useForm } from 'react-hook-form';
-import { FiEye, FiEyeOff, FiLock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
-import { useChangePassword } from '@/hooks/useProfile';
-import { checkPasswordStrength } from '@/api/profile.api';
+  Stack,
+} from "@chakra-ui/react";
+import { useForm } from "react-hook-form";
+import { FiLock, FiCheck, FiX, FiEye, FiEyeOff } from "react-icons/fi";
+import { useChangePassword } from "@/hooks/useProfile";
+import {
+  spacing,
+  fontSizes,
+  componentSizes,
+  layoutDirections,
+  useIsMobile,
+} from "@/styles/responsive";
 
-interface PasswordFormData {
+interface ChangePasswordFormData {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
 
 export const ChangePasswordForm: React.FC = () => {
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({
-    score: 0,
-    feedback: [] as string[],
-    isStrong: false,
-  });
-
+  const [showPasswords, setShowPasswords] = useState(false);
+  const toast = useToast();
   const changePasswordMutation = useChangePassword();
+  const isMobile = useIsMobile();
 
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
     reset,
-  } = useForm<PasswordFormData>();
+    formState: { errors },
+  } = useForm<ChangePasswordFormData>();
 
-  const newPassword = watch('newPassword');
+  const newPassword = watch("newPassword");
 
-  // Update password strength as user types
-  React.useEffect(() => {
-    if (newPassword) {
-      const strength = checkPasswordStrength(newPassword);
-      setPasswordStrength(strength);
-    } else {
-      setPasswordStrength({ score: 0, feedback: [], isStrong: false });
-    }
-  }, [newPassword]);
-
-  const onSubmit = async (data: PasswordFormData) => {
+  const onSubmit = async (data: ChangePasswordFormData) => {
     try {
       await changePasswordMutation.mutateAsync({
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       });
+
+      toast({
+        title: "Password changed",
+        description: "Your password has been updated successfully",
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+        position: isMobile ? "top" : "bottom-right",
+      });
+
       reset();
-      setPasswordStrength({ score: 0, feedback: [], isStrong: false });
-    } catch (error) {
-      // Error handled by mutation
+    } catch (error: any) {
+      toast({
+        title: "Password change failed",
+        description: error.message || "Please check your current password",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: isMobile ? "top" : "bottom-right",
+      });
     }
   };
 
-  const getStrengthColor = (score: number) => {
-    if (score === 0) return 'red';
-    if (score <= 2) return 'orange';
-    if (score === 3) return 'yellow';
-    return 'green';
-  };
-
-  const getStrengthLabel = (score: number) => {
-    if (score === 0) return 'Very Weak';
-    if (score === 1) return 'Weak';
-    if (score === 2) return 'Fair';
-    if (score === 3) return 'Good';
-    return 'Strong';
-  };
-
   return (
-    <Card>
-      <CardBody>
-        <VStack spacing={6} align="stretch">
-          <Box>
-            <Heading size="md" mb={2}>
-              Change Password
-            </Heading>
-            <Text color="gray.600" fontSize="sm">
-              Ensure your account stays secure by using a strong password
-            </Text>
-          </Box>
-
-          <Alert status="info" borderRadius="md">
-            <AlertIcon />
-            <Box flex="1">
-              <AlertTitle fontSize="sm">Password Requirements</AlertTitle>
-              <AlertDescription fontSize="xs">
-                Your password must be at least 8 characters long and include uppercase,
-                lowercase, numbers, and special characters.
-              </AlertDescription>
-            </Box>
-          </Alert>
+    <Card variant="elevated">
+      <CardBody p={spacing.card}>
+        <VStack spacing={spacing.stackSpacing.lg} align="stretch">
+          {/* Header */}
+          <Heading
+            size={isMobile ? "sm" : "md"}
+            fontSize={fontSizes.headings.card}
+          >
+            Change Password
+          </Heading>
 
           <Divider />
 
+          {/* Description */}
+          <Text fontSize={fontSizes.body.small} color="gray.600">
+            For your security, please choose a strong password that you haven't
+            used before.
+          </Text>
+
+          {/* Info Alert */}
+          <Alert
+            status="info"
+            borderRadius="md"
+            flexDirection={layoutDirections.stack.mobileVertical}
+            alignItems={{ base: "flex-start", sm: "center" }}
+          >
+            <AlertIcon />
+            <AlertDescription fontSize={fontSizes.body.small}>
+              Password must be at least 8 characters long
+            </AlertDescription>
+          </Alert>
+
+          {/* Form */}
           <Box as="form" onSubmit={handleSubmit(onSubmit)}>
-            <VStack spacing={5} align="stretch">
+            <VStack spacing={spacing.stackSpacing.lg} align="stretch">
               {/* Current Password */}
               <FormControl isInvalid={!!errors.currentPassword}>
-                <FormLabel>Current Password</FormLabel>
-                <InputGroup size="lg">
-                  <Input
-                    type={showCurrentPassword ? 'text' : 'password'}
-                    {...register('currentPassword', {
-                      required: 'Current password is required',
-                    })}
-                    placeholder="Enter current password"
-                  />
-                  <InputRightElement>
-                    <IconButton
-                      aria-label={showCurrentPassword ? 'Hide password' : 'Show password'}
-                      icon={showCurrentPassword ? <FiEyeOff /> : <FiEye />}
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      variant="ghost"
-                      size="sm"
-                    />
-                  </InputRightElement>
-                </InputGroup>
-                <FormErrorMessage>{errors.currentPassword?.message}</FormErrorMessage>
+                <FormLabel fontSize={fontSizes.body.small}>
+                  Current Password
+                </FormLabel>
+                <Input
+                  type={showPasswords ? "text" : "password"}
+                  size={componentSizes.inputs.md}
+                  fontSize={fontSizes.body.medium}
+                  {...register("currentPassword", {
+                    required: "Current password is required",
+                  })}
+                  placeholder="Enter your current password"
+                  autoComplete="current-password"
+                />
+                <FormErrorMessage fontSize={fontSizes.body.small}>
+                  {errors.currentPassword?.message}
+                </FormErrorMessage>
               </FormControl>
 
               {/* New Password */}
               <FormControl isInvalid={!!errors.newPassword}>
-                <FormLabel>New Password</FormLabel>
-                <InputGroup size="lg">
-                  <Input
-                    type={showNewPassword ? 'text' : 'password'}
-                    {...register('newPassword', {
-                      required: 'New password is required',
-                      minLength: {
-                        value: 8,
-                        message: 'Password must be at least 8 characters',
-                      },
-                      validate: (value) => {
-                        const strength = checkPasswordStrength(value);
-                        return strength.isStrong || 'Password is not strong enough';
-                      },
-                    })}
-                    placeholder="Enter new password"
-                  />
-                  <InputRightElement>
-                    <IconButton
-                      aria-label={showNewPassword ? 'Hide password' : 'Show password'}
-                      icon={showNewPassword ? <FiEyeOff /> : <FiEye />}
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      variant="ghost"
-                      size="sm"
-                    />
-                  </InputRightElement>
-                </InputGroup>
-                <FormErrorMessage>{errors.newPassword?.message}</FormErrorMessage>
-
-                {/* Password Strength Indicator */}
-                {newPassword && (
-                  <Box mt={3}>
-                    <HStack justify="space-between" mb={2}>
-                      <Text fontSize="xs" fontWeight="medium">
-                        Password Strength:
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        fontWeight="bold"
-                        color={`${getStrengthColor(passwordStrength.score)}.600`}
-                      >
-                        {getStrengthLabel(passwordStrength.score)}
-                      </Text>
-                    </HStack>
-                    <Progress
-                      value={(passwordStrength.score / 4) * 100}
-                      size="sm"
-                      colorScheme={getStrengthColor(passwordStrength.score)}
-                      borderRadius="full"
-                    />
-                  </Box>
-                )}
+                <FormLabel fontSize={fontSizes.body.small}>
+                  New Password
+                </FormLabel>
+                <Input
+                  type={showPasswords ? "text" : "password"}
+                  size={componentSizes.inputs.md}
+                  fontSize={fontSizes.body.medium}
+                  {...register("newPassword", {
+                    required: "New password is required",
+                    minLength: {
+                      value: 8,
+                      message: "Password must be at least 8 characters",
+                    },
+                  })}
+                  placeholder="Enter your new password"
+                  autoComplete="new-password"
+                />
+                <FormErrorMessage fontSize={fontSizes.body.small}>
+                  {errors.newPassword?.message}
+                </FormErrorMessage>
               </FormControl>
 
               {/* Confirm Password */}
               <FormControl isInvalid={!!errors.confirmPassword}>
-                <FormLabel>Confirm New Password</FormLabel>
-                <InputGroup size="lg">
-                  <Input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    {...register('confirmPassword', {
-                      required: 'Please confirm your password',
-                      validate: (value) =>
-                        value === newPassword || 'Passwords do not match',
-                    })}
-                    placeholder="Confirm new password"
-                  />
-                  <InputRightElement>
-                    <IconButton
-                      aria-label={
-                        showConfirmPassword ? 'Hide password' : 'Show password'
-                      }
-                      icon={showConfirmPassword ? <FiEyeOff /> : <FiEye />}
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      variant="ghost"
-                      size="sm"
-                    />
-                  </InputRightElement>
-                </InputGroup>
-                <FormErrorMessage>{errors.confirmPassword?.message}</FormErrorMessage>
+                <FormLabel fontSize={fontSizes.body.small}>
+                  Confirm New Password
+                </FormLabel>
+                <Input
+                  type={showPasswords ? "text" : "password"}
+                  size={componentSizes.inputs.md}
+                  fontSize={fontSizes.body.medium}
+                  {...register("confirmPassword", {
+                    required: "Please confirm your new password",
+                    validate: (value) =>
+                      value === newPassword || "Passwords do not match",
+                  })}
+                  placeholder="Confirm your new password"
+                  autoComplete="new-password"
+                />
+                <FormErrorMessage fontSize={fontSizes.body.small}>
+                  {errors.confirmPassword?.message}
+                </FormErrorMessage>
               </FormControl>
 
-              {/* Password Feedback */}
-              {passwordStrength.feedback.length > 0 && (
-                <Box
-                  p={3}
-                  bg="orange.50"
-                  borderRadius="md"
-                  borderLeft="3px solid"
-                  borderLeftColor="orange.400"
-                >
-                  <Text fontSize="xs" fontWeight="bold" mb={2} color="orange.800">
-                    Password Improvement Suggestions:
-                  </Text>
-                  <List spacing={1}>
-                    {passwordStrength.feedback.map((item, index) => (
-                      <ListItem key={index} fontSize="xs" color="orange.700">
-                        <ListIcon as={FiXCircle} color="orange.500" />
-                        {item}
-                      </ListItem>
-                    ))}
-                  </List>
-                </Box>
-              )}
-
-              {/* Success Message */}
-              {changePasswordMutation.isSuccess && (
-                <Alert status="success" borderRadius="md">
-                  <AlertIcon />
-                  <Box flex="1">
-                    <AlertTitle fontSize="sm">Password Changed!</AlertTitle>
-                    <AlertDescription fontSize="xs">
-                      Your password has been updated successfully.
-                    </AlertDescription>
-                  </Box>
-                </Alert>
-              )}
-
-              {/* Submit Button */}
+              {/* Show/Hide Password Toggle */}
               <Button
-                type="submit"
-                colorScheme="blue"
-                size="lg"
-                leftIcon={<FiLock />}
-                isLoading={changePasswordMutation.isPending}
-                loadingText="Changing Password..."
+                size={componentSizes.buttons.sm}
+                variant="ghost"
+                onClick={() => setShowPasswords(!showPasswords)}
+                alignSelf="flex-start"
+                leftIcon={showPasswords ? <FiEyeOff /> : <FiEye />}
+                rightIcon={showPasswords ? undefined : <FiLock />}
               >
-                Change Password
+                {showPasswords ? "Hide Passwords" : "Show Passwords"}
               </Button>
+
+              <Divider />
+
+              {/* Action Buttons */}
+              <Stack
+                direction={layoutDirections.stack.mobileVertical}
+                spacing={spacing.stackSpacing.sm}
+                justify="flex-end"
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => reset()}
+                  size={componentSizes.buttons.md}
+                  width={{ base: "100%", sm: "auto" }}
+                  leftIcon={<FiX />}
+                >
+                  Clear
+                </Button>
+                <Button
+                  type="submit"
+                  colorScheme="blue"
+                  isLoading={changePasswordMutation.isPending}
+                  leftIcon={<FiCheck />}
+                  size={componentSizes.buttons.md}
+                  width={{ base: "100%", sm: "auto" }}
+                >
+                  Update Password
+                </Button>
+              </Stack>
             </VStack>
           </Box>
         </VStack>
@@ -291,5 +238,4 @@ export const ChangePasswordForm: React.FC = () => {
   );
 };
 
-// Helper component for HStack (imported from @chakra-ui/react above)
-import { HStack } from '@chakra-ui/react';
+export default ChangePasswordForm;

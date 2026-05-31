@@ -1,8 +1,9 @@
 // ============================================
-// Profile Page Component
+// Profile Page Component - Fully Responsive
+
 // ============================================
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Container,
@@ -17,7 +18,6 @@ import {
   VStack,
   HStack,
   Text,
-  Avatar,
   Button,
   FormControl,
   FormLabel,
@@ -29,16 +29,9 @@ import {
   Icon,
   Spinner,
   Center,
-  IconButton,
-  useDisclosure,
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
-} from '@chakra-ui/react';
-import { useForm } from 'react-hook-form';
+  Stack,
+} from "@chakra-ui/react";
+import { useForm } from "react-hook-form";
 import {
   FiUser,
   FiShield,
@@ -46,37 +39,28 @@ import {
   FiBriefcase,
   FiCalendar,
   FiEdit,
-  FiCamera,
-  FiTrash2,
   FiSave,
   FiX,
-} from 'react-icons/fi';
-import { useAuth } from '@/hooks/useAuth';
+} from "react-icons/fi";
+import { useAuth } from "@/hooks/useAuth";
+import { useUpdateProfile } from "@/hooks/useProfile";
+import { ChangePasswordForm } from "./ChangePasswordForm";
 import {
-  useUpdateProfile,
-  useChangePassword,
-  useUploadAvatar,
-  useDeleteAvatar,
-} from '@/hooks/useProfile';
-import { ChangePasswordForm } from './ChangePasswordForm';
+  spacing,
+  fontSizes,
+  componentSizes,
+  layoutDirections,
+  componentResponsive,
+  useIsMobile,
+  useIsDesktop,
+} from "@/styles/responsive";
 
 export const ProfilePage: React.FC = () => {
   const { profile, refreshProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const toast = useToast();
 
   const updateProfileMutation = useUpdateProfile();
-  const uploadAvatarMutation = useUploadAvatar();
-  const deleteAvatarMutation = useDeleteAvatar();
-
-  const {
-    isOpen: isDeleteAvatarOpen,
-    onOpen: onDeleteAvatarOpen,
-    onClose: onDeleteAvatarClose,
-  } = useDisclosure();
-  const cancelRef = React.useRef<HTMLButtonElement>(null);
 
   const {
     register,
@@ -85,76 +69,22 @@ export const ProfilePage: React.FC = () => {
     reset,
   } = useForm({
     defaultValues: {
-      full_name: profile?.full_name || '',
+      full_name: profile?.full_name || "",
     },
   });
+
+  // Responsive hooks
+  const isMobile = useIsMobile();
+  const isDesktop = useIsDesktop();
 
   // Update form when profile loads
   React.useEffect(() => {
     if (profile) {
       reset({
-        full_name: profile.full_name || '',
+        full_name: profile.full_name || "",
       });
     }
   }, [profile, reset]);
-
-//   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = e.target.files?.[0];
-//     if (!file) return;
-
-//     // Validate file size (max 2MB)
-//     if (file.size > 2 * 1024 * 1024) {
-//       toast({
-//         title: 'File too large',
-//         description: 'Avatar must be less than 2MB',
-//         status: 'error',
-//         duration: 5000,
-//       });
-//       return;
-//     }
-
-//     // Validate file type
-//     if (!file.type.startsWith('image/')) {
-//       toast({
-//         title: 'Invalid file type',
-//         description: 'Please upload an image file',
-//         status: 'error',
-//         duration: 5000,
-//       });
-//       return;
-//     }
-
-//     // Show preview
-//     const reader = new FileReader();
-//     reader.onloadend = () => {
-//       setAvatarPreview(reader.result as string);
-//     };
-//     reader.readAsDataURL(file);
-
-//     // Upload
-//     try {
-//       const avatarUrl = await uploadAvatarMutation.mutateAsync(file);
-//       await updateProfileMutation.mutateAsync({ avatar_url: avatarUrl });
-//       await refreshProfile();
-//       setAvatarPreview(null);
-//     } catch (error) {
-//       setAvatarPreview(null);
-//     }
-//   };
-
-// Handle delete avatar
-//   const handleDeleteAvatar = async () => {
-//     if (!profile?.avatar_url) return;
-
-//     try {
-//       await deleteAvatarMutation.mutateAsync(profile.avatar_url);
-//       await updateProfileMutation.mutateAsync({ avatar_url: '' });
-//       await refreshProfile();
-//       onDeleteAvatarClose();
-//     } catch (error) {
-//       // Error handled by mutation
-//     }
-//   };
 
   const onSubmit = async (data: any) => {
     try {
@@ -163,206 +93,351 @@ export const ProfilePage: React.FC = () => {
       });
       await refreshProfile();
       setIsEditing(false);
-    } catch (error) {
-      // Error handled by mutation
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: isMobile ? "top" : "bottom-right",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error.message || "Something went wrong",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: isMobile ? "top" : "bottom-right",
+      });
     }
+  };
+
+  const onCancel = () => {
+    reset({
+      full_name: profile?.full_name || "",
+    });
+    setIsEditing(false);
   };
 
   if (!profile) {
     return (
-      <Center h="400px">
-        <VStack spacing={4}>
-          <Spinner size="xl" color="blue.500" thickness="4px" />
-          <Text>Loading profile...</Text>
+      <Center minH={{ base: "300px", md: "400px" }} py={spacing.section.base}>
+        <VStack spacing={spacing.stackSpacing.sm}>
+          <Spinner
+            size={isMobile ? "lg" : "xl"}
+            color="blue.500"
+            thickness="4px"
+          />
+          <Text fontSize={fontSizes.body.medium} color="gray.600">
+            Loading profile...
+          </Text>
         </VStack>
       </Center>
     );
   }
 
+  // Get role badge color scheme
+  const getRoleColorScheme = () => {
+    switch (profile.role) {
+      case "admin":
+        return "purple";
+      case "hr":
+        return "blue";
+      case "director":
+        return "green";
+      default:
+        return "gray";
+    }
+  };
+
   return (
-    <Container maxW="container.lg" py={8}>
-      <VStack spacing={6} align="stretch">
-        {/* Header */}
+    <Container
+      maxW="container.lg"
+      py={spacing.container}
+      px={spacing.container}
+    >
+      <VStack spacing={spacing.stackSpacing.lg} align="stretch">
+        {/* Header Section */}
         <Box>
-          <Heading size="lg" mb={2}>
+          <Heading fontSize={fontSizes.headings.pageTitle} mb={spacing.gaps.sm}>
             My Profile
           </Heading>
-          <Text color="gray.600">Manage your account settings and preferences</Text>
+          <Text fontSize={fontSizes.body.medium} color="gray.600">
+            Manage your account settings and preferences
+          </Text>
         </Box>
 
-        <Tabs colorScheme="blue" variant="enclosed">
-          <TabList>
+        {/* Tabs Section */}
+        <Tabs
+          colorScheme="blue"
+          variant="enclosed"
+          isLazy
+          size={isMobile ? "sm" : "md"}
+        >
+          {/* Responsive TabList */}
+          <TabList
+            overflowX={componentResponsive.profilePage.tabListOverflow}
+            overflowY="hidden"
+            whiteSpace="nowrap"
+            css={{
+              scrollbarWidth: "thin",
+              "&::-webkit-scrollbar": {
+                height: "4px",
+              },
+            }}
+          >
             <Tab>
-              <Icon as={FiUser} mr={2} />
-              General
+              <Icon as={FiUser} mr={spacing.gaps.xs} />
+              <Text as="span" display={{ base: "none", sm: "inline" }}>
+                General
+              </Text>
             </Tab>
             <Tab>
-              <Icon as={FiShield} mr={2} />
-              Security
+              <Icon as={FiShield} mr={spacing.gaps.xs} />
+              <Text as="span" display={{ base: "none", xs: "inline" }}>
+                Security
+              </Text>
             </Tab>
           </TabList>
 
           <TabPanels>
             {/* GENERAL TAB */}
-            <TabPanel p={0} pt={6}>
-              <Card>
-                <CardBody>
-                  <VStack spacing={8} align="stretch">
-                    {/* Avatar Section */}
-                    {/* <VStack spacing={4}>
-                      <Box position="relative">
-                        <Avatar
-                          size="2xl"
-                          name={profile.full_name || undefined}
-                          src={avatarPreview || profile.avatar_url || undefined}
-                        />
-                        <IconButton
-                          aria-label="Change avatar"
-                          icon={<FiCamera />}
-                          size="sm"
-                          colorScheme="blue"
-                          borderRadius="full"
-                          position="absolute"
-                          bottom={0}
-                          right={0}
-                          onClick={() => fileInputRef.current?.click()}
-                          isLoading={uploadAvatarMutation.isPending}
-                        />
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          accept="image/*"
-                          onChange={handleAvatarChange}
-                          style={{ display: 'none' }}
-                        />
-                      </Box>
-
-                      {profile.avatar_url && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          colorScheme="red"
-                          leftIcon={<FiTrash2 />}
-                          onClick={onDeleteAvatarOpen}
-                        >
-                          Remove Avatar
-                        </Button>
-                      )}
-
-                      <Text fontSize="sm" color="gray.500">
-                        Click camera icon to upload new photo (max 2MB)
-                      </Text>
-                    </VStack> */}
-
-                    {/* <Divider /> */}
-
-                    {/* Profile Information */}
+            <TabPanel p={spacing.card} pt={spacing.gaps.lg}>
+              <Card variant="elevated">
+                <CardBody p={spacing.card}>
+                  <VStack spacing={spacing.stackSpacing.xl} align="stretch">
+                    {/* Profile Information Form */}
                     <Box as="form" onSubmit={handleSubmit(onSubmit)}>
-                      <VStack spacing={6} align="stretch">
-                        <HStack justify="space-between">
-                          <Heading size="md">Profile Information</Heading>
-                            {/* Edit button */}
-                          {/* {!isEditing ? (
+                      <VStack spacing={spacing.stackSpacing.lg} align="stretch">
+                        {/* Header with Edit/Save/Cancel Buttons */}
+                        <Stack
+                          direction={layoutDirections.stack.mobileVertical}
+                          justify="space-between"
+                          align={{ base: "flex-start", sm: "center" }}
+                          spacing={spacing.stackSpacing.sm}
+                        >
+                          <Heading
+                            size={isMobile ? "sm" : "md"}
+                            fontSize={fontSizes.headings.card}
+                          >
+                            Profile Information
+                          </Heading>
+
+                          {/* Action Buttons */}
+                          {!isEditing ? (
                             <Button
+                              size={componentSizes.buttons.md}
                               leftIcon={<FiEdit />}
-                              size="sm"
                               onClick={() => setIsEditing(true)}
+                              colorScheme="blue"
+                              variant="outline"
+                              width={{ base: "100%", sm: "auto" }}
                             >
                               Edit Profile
                             </Button>
                           ) : (
-                            <HStack>
+                            <HStack
+                              spacing={spacing.gaps.md}
+                              width={{ base: "100%", sm: "auto" }}
+                            >
                               <Button
+                                size={componentSizes.buttons.md}
                                 leftIcon={<FiX />}
-                                size="sm"
+                                onClick={onCancel}
                                 variant="ghost"
-                                onClick={() => {
-                                  setIsEditing(false);
-                                  reset();
-                                }}
+                                width={{ base: "50%", sm: "auto" }}
                               >
                                 Cancel
                               </Button>
                               <Button
+                                size={componentSizes.buttons.md}
                                 leftIcon={<FiSave />}
-                                size="sm"
-                                colorScheme="blue"
                                 type="submit"
+                                colorScheme="blue"
                                 isLoading={updateProfileMutation.isPending}
+                                width={{ base: "50%", sm: "auto" }}
                               >
                                 Save Changes
                               </Button>
                             </HStack>
-                          )} */}
-                        </HStack>
+                          )}
+                        </Stack>
 
+                        <Divider />
+
+                        {/* Full Name Field */}
                         <FormControl isInvalid={!!errors.full_name}>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel fontSize={fontSizes.body.small}>
+                            Full Name
+                          </FormLabel>
                           {isEditing ? (
                             <Input
-                              {...register('full_name', {
-                                required: 'Name is required',
+                              {...register("full_name", {
+                                required: "Name is required",
                                 minLength: {
                                   value: 2,
-                                  message: 'Name must be at least 2 characters',
+                                  message: "Name must be at least 2 characters",
                                 },
                               })}
-                              size="lg"
+                              size={componentSizes.inputs.md}
+                              fontSize={fontSizes.body.medium}
+                              autoFocus
                             />
                           ) : (
-                            <HStack spacing={2}>
-                              <Icon as={FiUser} color="gray.400" />
-                              <Text fontSize="lg">{profile.full_name}</Text>
+                            <HStack
+                              spacing={spacing.gaps.md}
+                              align="center"
+                              flexWrap="wrap"
+                            >
+                              <Icon
+                                as={FiUser}
+                                color="gray.400"
+                                boxSize={componentSizes.icons.md}
+                              />
+                              <Text
+                                fontSize={fontSizes.body.large}
+                                fontWeight="medium"
+                                wordBreak="break-word"
+                              >
+                                {profile.full_name}
+                              </Text>
                             </HStack>
                           )}
-                          <FormErrorMessage>
+                          <FormErrorMessage fontSize={fontSizes.body.small}>
                             {errors.full_name?.message}
                           </FormErrorMessage>
                         </FormControl>
 
+                        {/* Email Field */}
                         <FormControl>
-                          <FormLabel>Email Address</FormLabel>
-                          <HStack spacing={2}>
-                            <Icon as={FiMail} color="gray.400" />
-                            <Text fontSize="lg" color="gray.700">
-                              {profile.email}
-                            </Text>
-                            <Badge colorScheme="gray" ml={2}>
+                          <FormLabel fontSize={fontSizes.body.small}>
+                            Email Address
+                          </FormLabel>
+                          <Stack
+                            direction={{ base: "column", xs: "row" }}
+                            spacing={spacing.gaps.md}
+                            align={{ base: "flex-start", xs: "center" }}
+                            wrap="wrap"
+                          >
+                            <HStack spacing={spacing.gaps.sm}>
+                              <Icon
+                                as={FiMail}
+                                color="gray.400"
+                                boxSize={componentSizes.icons.md}
+                              />
+                              <Text
+                                fontSize={fontSizes.body.medium}
+                                color="gray.700"
+                                wordBreak="break-all"
+                              >
+                                {profile.email}
+                              </Text>
+                            </HStack>
+                            <Badge
+                              colorScheme="gray"
+                              fontSize={fontSizes.badge}
+                              px={spacing.gaps.xs}
+                              py={0.5}
+                              whiteSpace="nowrap"
+                              borderRadius="full"
+                            >
                               Cannot be changed
                             </Badge>
-                          </HStack>
+                          </Stack>
                         </FormControl>
 
+                        {/* Role Field */}
                         <FormControl>
-                          <FormLabel>Role</FormLabel>
-                          <HStack spacing={2}>
-                            <Icon as={FiShield} color="gray.400" />
+                          <FormLabel fontSize={fontSizes.body.small}>
+                            Role
+                          </FormLabel>
+                          <HStack
+                            spacing={spacing.gaps.md}
+                            align="center"
+                            flexWrap="wrap"
+                          >
+                            <Icon
+                              as={FiShield}
+                              color="gray.400"
+                              boxSize={componentSizes.icons.md}
+                            />
                             <Badge
-                              colorScheme={
-                                profile.role === 'admin'
-                                  ? 'purple'
-                                  : profile.role === 'hr'
-                                  ? 'blue'
-                                  : profile.role === 'director'
-                                  ? 'green'
-                                  : 'gray'
-                              }
-                              fontSize="md"
-                              px={3}
-                              py={1}
+                              colorScheme={getRoleColorScheme()}
+                              fontSize={fontSizes.body.small}
+                              px={spacing.gaps.md}
+                              py={spacing.gaps.xs}
+                              borderRadius="full"
+                              textTransform="capitalize"
                             >
-                              {profile.role.toUpperCase()}
+                              {profile.role}
                             </Badge>
                           </HStack>
                         </FormControl>
 
+                        {/* Department Field */}
                         {profile.department && (
                           <FormControl>
-                            <FormLabel>Department</FormLabel>
-                            <HStack spacing={2}>
-                              <Icon as={FiBriefcase} color="gray.400" />
-                              <Text fontSize="lg">
-                                {profile.department.name} ({profile.department.code})
+                            <FormLabel fontSize={fontSizes.body.small}>
+                              Department
+                            </FormLabel>
+                            <Stack
+                              direction={{ base: "column", xs: "row" }}
+                              spacing={spacing.gaps.md}
+                              align={{ base: "flex-start", xs: "center" }}
+                              wrap="wrap"
+                            >
+                              <HStack spacing={spacing.gaps.sm}>
+                                <Icon
+                                  as={FiBriefcase}
+                                  color="gray.400"
+                                  boxSize={componentSizes.icons.md}
+                                />
+                                <Text
+                                  fontSize={fontSizes.body.medium}
+                                  fontWeight="medium"
+                                  wordBreak="break-word"
+                                >
+                                  {profile.department.name}
+                                </Text>
+                              </HStack>
+                              {profile.department.code && (
+                                <Badge
+                                  colorScheme="gray"
+                                  variant="outline"
+                                  fontSize={fontSizes.badge}
+                                  px={spacing.gaps.xs}
+                                >
+                                  {profile.department.code}
+                                </Badge>
+                              )}
+                            </Stack>
+                          </FormControl>
+                        )}
+
+                        {/* Last Login Field (if available) */}
+                        {(profile as any).last_login && (
+                          <FormControl>
+                            <FormLabel fontSize={fontSizes.body.small}>
+                              Last Login
+                            </FormLabel>
+                            <HStack spacing={spacing.gaps.md}>
+                              <Icon
+                                as={FiCalendar}
+                                color="gray.400"
+                                boxSize={componentSizes.icons.md}
+                              />
+                              <Text
+                                fontSize={fontSizes.body.medium}
+                                color="gray.600"
+                              >
+                                {new Date(
+                                  (profile as any).last_login,
+                                ).toLocaleDateString(undefined, {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                })}
                               </Text>
                             </HStack>
                           </FormControl>
@@ -375,41 +450,14 @@ export const ProfilePage: React.FC = () => {
             </TabPanel>
 
             {/* SECURITY TAB */}
-            <TabPanel p={0} pt={6}>
+            <TabPanel p={spacing.card} pt={spacing.gaps.lg}>
               <ChangePasswordForm />
             </TabPanel>
           </TabPanels>
         </Tabs>
       </VStack>
-
-      {/* Delete Avatar Confirmation */}
-      {/* <AlertDialog
-        isOpen={isDeleteAvatarOpen}
-        leastDestructiveRef={cancelRef as React.RefObject<HTMLButtonElement>}
-        onClose={onDeleteAvatarClose}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader>Remove Profile Picture</AlertDialogHeader>
-            <AlertDialogBody>
-              Are you sure you want to remove your profile picture?
-            </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onDeleteAvatarClose}>
-                Cancel
-              </Button>
-              <Button
-                colorScheme="red"
-                onClick={handleDeleteAvatar}
-                ml={3}
-                isLoading={deleteAvatarMutation.isPending}
-              >
-                Remove
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog> */}
     </Container>
   );
 };
+
+export default ProfilePage;

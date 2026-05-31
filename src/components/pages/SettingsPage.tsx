@@ -22,6 +22,7 @@ import { DesignationManagement } from "@/components/admin/DesignationManagement"
 import { DesiredMonthsAdminView } from "@/components/desiredMonths/DesiredMonthsAdminView";
 import { LeaveAllocationManagement } from "@/components/admin/LeaveAllocationManagement";
 import { ReportsPage } from "@/components/reports/ReportsPage";
+import { LeaveTypeConfigManagement } from "@/components/admin/LeaveTypeConfigManagement";
 
 const SettingsPage: React.FC = () => {
   const { profile } = useAuth();
@@ -40,6 +41,7 @@ const SettingsPage: React.FC = () => {
             <Tab>📅 Desired Months</Tab>
             <Tab>🗓️ Allocations</Tab>
             <Tab>📊 Reports</Tab>
+            <Tab>Leave Config</Tab>
           </TabList>
 
           <TabPanels>
@@ -63,6 +65,9 @@ const SettingsPage: React.FC = () => {
             </TabPanel>
             <TabPanel>
               <ReportsPage />
+            </TabPanel>
+            <TabPanel>
+              <LeaveTypeConfigManagement />
             </TabPanel>
           </TabPanels>
         </Tabs>

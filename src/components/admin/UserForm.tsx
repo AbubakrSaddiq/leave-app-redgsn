@@ -1,3 +1,9 @@
+// File: src/components/admin/UserForm.tsx (REFACTORED)
+// ============================================
+// User Form Component - Mobile Responsive
+// Integrated with existing password management
+// ============================================
+
 import React, { useState, useEffect } from "react";
 import {
   Modal,
@@ -27,6 +33,9 @@ import {
   IconButton,
   Tooltip,
   Badge,
+  Spinner,
+  Center,
+  useBreakpointValue,
 } from "@chakra-ui/react";
 import {
   FiUser,
@@ -41,19 +50,21 @@ import {
   FiEyeOff,
 } from "react-icons/fi";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { getDesignations } from "@/api/designation.api";
+import { useCreateUser, useUpdateUser } from "@/hooks/useUserMutations";
+import {
+  spacing,
+  fontSizes,
+  componentSizes,
+  componentResponsive,
+  useIsMobile,
+} from "@/styles/responsive";
+import type { User, Department, Designation } from "@/types/user";
 
-interface UserFormProps {
-  user?: any;
-  departments: any[];
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
+// Constants
 const DEFAULT_PASSWORD = "Naseni123!";
 
+// Password generation utility
 const generateSecurePassword = (): string => {
   const length = 12;
   const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -78,6 +89,14 @@ const generateSecurePassword = (): string => {
     .join("");
 };
 
+interface UserFormProps {
+  user?: User | null;
+  departments: Department[];
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
 export const UserForm: React.FC<UserFormProps> = ({
   user,
   departments,
@@ -86,18 +105,26 @@ export const UserForm: React.FC<UserFormProps> = ({
   onSuccess,
 }) => {
   const toast = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+
+  const isMobile = useIsMobile();
+  const modalSize = useBreakpointValue(componentResponsive.modal.size);
+  const formLabelSize = useBreakpointValue({ base: "xs", md: "sm" });
+  const inputSize = useBreakpointValue(componentSizes.inputs.md);
+  const buttonSize = useBreakpointValue(componentSizes.buttons.md);
+
   const [passwordOption, setPasswordOption] = useState<"default" | "auto">(
     "default",
   );
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: user?.email || "",
-    full_name: user?.full_name || "",
+    email: "",
+    full_name: "",
     password: DEFAULT_PASSWORD,
-    role: user?.role || "staff",
-    department_id: user?.department_id || "",
-    designation_id: user?.designation_id || "",
+    role: "staff",
+    department_id: "",
+    designation_id: "",
   });
 
   // Fetch designations
@@ -106,7 +133,34 @@ export const UserForm: React.FC<UserFormProps> = ({
     queryFn: getDesignations,
   });
 
-  // Update password when option changes
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (isOpen && !user) {
+      // Create mode
+      setPasswordOption("default");
+      setFormData({
+        email: "",
+        full_name: "",
+        password: DEFAULT_PASSWORD,
+        role: "staff",
+        department_id: "",
+        designation_id: "",
+      });
+      setShowPassword(false);
+    } else if (isOpen && user) {
+      // Edit mode - populate with user data
+      setFormData({
+        email: user.email || "",
+        full_name: user.full_name || "",
+        password: "",
+        role: user.role || "staff",
+        department_id: user.department_id || "",
+        designation_id: user.designation_id || "",
+      });
+    }
+  }, [isOpen, user]);
+
+  // Update password when option changes (create mode only)
   useEffect(() => {
     if (!user) {
       if (passwordOption === "default") {
@@ -120,40 +174,16 @@ export const UserForm: React.FC<UserFormProps> = ({
     }
   }, [passwordOption, user]);
 
-  // Reset form when modal opens/closes
-  useEffect(() => {
-    if (isOpen && !user) {
-      setPasswordOption("default");
-      setFormData({
-        email: "",
-        full_name: "",
-        password: DEFAULT_PASSWORD,
-        role: "staff",
-        department_id: "",
-        designation_id: "",
-      });
-      setShowPassword(false);
-    } else if (isOpen && user) {
-      // When editing, populate with user data
-      setFormData({
-        email: user.email || "",
-        full_name: user.full_name || "",
-        password: "",
-        role: user.role || "staff",
-        department_id: user.department_id || "",
-        designation_id: user.designation_id || "",
-      });
-    }
-  }, [isOpen, user]);
-
   const handleRegeneratePassword = () => {
     const newPassword = generateSecurePassword();
     setFormData((prev) => ({ ...prev, password: newPassword }));
     toast({
       title: "Password regenerated",
+      description: "A new secure password has been generated",
       status: "success",
       duration: 2000,
       isClosable: true,
+      position: isMobile ? "top" : "bottom-right",
     });
   };
 
@@ -165,259 +195,331 @@ export const UserForm: React.FC<UserFormProps> = ({
       status: "success",
       duration: 3000,
       isClosable: true,
+      position: isMobile ? "top" : "bottom-right",
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    setIsSubmitting(true);
-
-    try {
-      if (user) {
-        // UPDATE MODE
-        const { error } = await supabase
-          .from("users")
-          .update({
+    if (user) {
+      // UPDATE MODE
+      try {
+        await updateUserMutation.mutateAsync({
+          id: user.id,
+          data: {
             full_name: formData.full_name,
-            role: formData.role,
+            role: formData.role as User["role"],
             department_id: formData.department_id || null,
             designation_id: formData.designation_id || null,
-          })
-          .eq("id", user.id);
-
-        if (error) throw error;
-        toast({ title: "User updated successfully", status: "success" });
-      } else {
-        // CREATE MODE
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          throw new Error("No active session — please log out and log back in");
-        }
-
-        console.log("Sending token:", session.access_token.substring(0, 20)); // debug
-
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({
-              email: formData.email,
-              password: formData.password,
-              full_name: formData.full_name,
-              role: formData.role,
-              department_id: formData.department_id || null,
-              designation_id: formData.designation_id || null,
-            }),
           },
-        );
+        });
 
-        const data = await response.json();
-        console.log("Response status:", response.status, "Data:", data); // debug
+        toast({
+          title: "User updated successfully",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+          position: isMobile ? "top" : "bottom-right",
+        });
 
-        if (!response.ok)
-          throw new Error(data.error ?? "Failed to create user");
+        onSuccess();
+        onClose();
+      } catch (error: any) {
+        toast({
+          title: "Update failed",
+          description: error.message,
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+          position: isMobile ? "top" : "bottom-right",
+        });
+      }
+    } else {
+      // CREATE MODE
+      try {
+        await createUserMutation.mutateAsync({
+          email: formData.email,
+          password: formData.password,
+          full_name: formData.full_name,
+          role: formData.role as User["role"],
+          department_id: formData.department_id || null,
+          designation_id: formData.designation_id || null,
+        });
 
         toast({
           title: "User created successfully",
           description:
             passwordOption === "auto"
               ? "Generated password has been copied to clipboard"
-              : "Default password assigned",
+              : `Default password: ${DEFAULT_PASSWORD}`,
           status: "success",
           duration: 5000,
           isClosable: true,
+          position: isMobile ? "top" : "bottom-right",
         });
 
-        navigator.clipboard.writeText(formData.password);
+        // Auto-copy password for convenience
+        if (passwordOption === "auto") {
+          await navigator.clipboard.writeText(formData.password);
+        }
+
+        onSuccess();
+        onClose();
+      } catch (error: any) {
+        toast({
+          title: "Creation failed",
+          description: error.message,
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+          position: isMobile ? "top" : "bottom-right",
+        });
       }
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      toast({
-        title: "Operation failed",
-        description: err.message,
-        status: "error",
-      });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
+  const isSubmitting =
+    createUserMutation.isPending || updateUserMutation.isPending;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      isCentered
+      size={modalSize}
+      motionPreset="slideInBottom"
+    >
       <ModalOverlay backdropFilter="blur(4px)" />
-      <ModalContent borderRadius="xl">
+      <ModalContent
+        borderRadius={isMobile ? 0 : "xl"}
+        mx={isMobile ? 0 : 4}
+        my={isMobile ? 0 : "auto"}
+        minH={isMobile ? "100vh" : "auto"}
+      >
         <form onSubmit={handleSubmit}>
-          <ModalHeader borderBottomWidth="1px">
+          <ModalHeader
+            borderBottomWidth="1px"
+            fontSize={fontSizes.headings.card}
+            py={spacing.gaps.md}
+          >
             {user ? "Edit Staff Member" : "Register New Staff"}
           </ModalHeader>
-          <ModalCloseButton />
+          <ModalCloseButton top={spacing.gaps.md} right={spacing.gaps.md} />
 
-          <ModalBody py={6}>
-            <VStack spacing={4}>
+          <ModalBody py={spacing.stackSpacing.lg}>
+            <VStack spacing={spacing.stackSpacing.md}>
+              {/* Email Field - Disabled in edit mode */}
               <FormControl isRequired isDisabled={!!user}>
-                <FormLabel fontSize="xs" fontWeight="bold">
+                <FormLabel fontSize={formLabelSize} fontWeight="bold">
                   Email Address
                 </FormLabel>
                 <InputGroup>
-                  <InputLeftElement
-                    children={<Icon as={FiMail} color="gray.400" />}
-                  />
+                  <InputLeftElement>
+                    <Icon
+                      as={FiMail}
+                      color="gray.400"
+                      boxSize={componentSizes.icons.sm}
+                    />
+                  </InputLeftElement>
                   <Input
                     type="email"
                     value={formData.email}
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    placeholder="name@company.com"
+                    placeholder="name@naseni.gov.ng"
+                    size={inputSize}
+                    fontSize={fontSizes.body.medium}
                   />
                 </InputGroup>
               </FormControl>
 
+              {/* Password Section - Create mode only */}
               {!user && (
-                <FormControl isRequired>
-                  <FormLabel fontSize="xs" fontWeight="bold">
-                    Password Option
-                  </FormLabel>
-                  <RadioGroup
-                    value={passwordOption}
-                    onChange={(val) =>
-                      setPasswordOption(val as "default" | "auto")
-                    }
-                  >
-                    <Stack direction="row" spacing={6}>
-                      <Radio value="default" colorScheme="blue">
-                        <HStack spacing={2}>
-                          <Text fontSize="sm">Default Password</Text>
-                          <Badge colorScheme="blue" fontSize="10px">
-                            Naseni123!
-                          </Badge>
-                        </HStack>
-                      </Radio>
-                      <Radio value="auto" colorScheme="green">
-                        <HStack spacing={2}>
-                          <Text fontSize="sm">Auto-Generate</Text>
-                          <Badge colorScheme="green" fontSize="10px">
-                            Secure
-                          </Badge>
-                        </HStack>
-                      </Radio>
-                    </Stack>
-                  </RadioGroup>
-                  <Text fontSize="xs" color="gray.500" mt={2}>
-                    {passwordOption === "default"
-                      ? "Uses the standard temporary password for new users"
-                      : "Generates a strong random password (12+ characters)"}
-                  </Text>
-                </FormControl>
-              )}
+                <>
+                  {/* Password Option Radio */}
+                  <FormControl isRequired>
+                    <FormLabel fontSize={formLabelSize} fontWeight="bold">
+                      Password Option
+                    </FormLabel>
+                    <RadioGroup
+                      value={passwordOption}
+                      onChange={(val) =>
+                        setPasswordOption(val as "default" | "auto")
+                      }
+                    >
+                      <Stack
+                        direction={{ base: "column", sm: "row" }}
+                        spacing={{ base: 3, sm: 6 }}
+                      >
+                        <Radio value="default" colorScheme="blue">
+                          <HStack spacing={2}>
+                            <Text fontSize={fontSizes.body.small}>
+                              Default Password
+                            </Text>
+                            <Badge
+                              colorScheme="blue"
+                              fontSize={fontSizes.badge}
+                              px={spacing.gaps.xs}
+                            >
+                              Naseni123!
+                            </Badge>
+                          </HStack>
+                        </Radio>
+                        <Radio value="auto" colorScheme="green">
+                          <HStack spacing={2}>
+                            <Text fontSize={fontSizes.body.small}>
+                              Auto-Generate
+                            </Text>
+                            <Badge
+                              colorScheme="green"
+                              fontSize={fontSizes.badge}
+                              px={spacing.gaps.xs}
+                            >
+                              Secure
+                            </Badge>
+                          </HStack>
+                        </Radio>
+                      </Stack>
+                    </RadioGroup>
+                    <Text
+                      fontSize={fontSizes.body.caption}
+                      color="gray.500"
+                      mt={spacing.gaps.xs}
+                    >
+                      {passwordOption === "default"
+                        ? "Uses the standard temporary password for new users"
+                        : "Generates a strong random password (12+ characters)"}
+                    </Text>
+                  </FormControl>
 
-              {!user && (
-                <FormControl isRequired>
-                  <FormLabel fontSize="xs" fontWeight="bold">
-                    {passwordOption === "default"
-                      ? "Default Password"
-                      : "Generated Password"}
-                  </FormLabel>
-                  <InputGroup>
-                    <InputLeftElement
-                      children={<Icon as={FiLock} color="gray.400" />}
-                    />
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      readOnly
-                      bg="gray.50"
-                      fontFamily="mono"
-                      fontSize="sm"
-                    />
-                    <InputRightElement width="auto" pr={2}>
-                      <HStack spacing={1}>
-                        {passwordOption === "auto" && (
-                          <Tooltip label="Regenerate password">
+                  {/* Password Display Field */}
+                  <FormControl isRequired>
+                    <FormLabel fontSize={formLabelSize} fontWeight="bold">
+                      {passwordOption === "default"
+                        ? "Default Password"
+                        : "Generated Password"}
+                    </FormLabel>
+                    <InputGroup>
+                      <InputLeftElement>
+                        <Icon
+                          as={FiLock}
+                          color="gray.400"
+                          boxSize={componentSizes.icons.sm}
+                        />
+                      </InputLeftElement>
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        readOnly
+                        bg="gray.50"
+                        fontFamily="mono"
+                        fontSize={fontSizes.body.small}
+                        size={inputSize}
+                      />
+                      <InputRightElement width="auto" pr={2}>
+                        <HStack spacing={1}>
+                          {passwordOption === "auto" && (
+                            <Tooltip label="Regenerate password">
+                              <IconButton
+                                aria-label="Regenerate password"
+                                icon={<FiRefreshCw />}
+                                size="xs"
+                                variant="ghost"
+                                onClick={handleRegeneratePassword}
+                              />
+                            </Tooltip>
+                          )}
+                          <Tooltip label="Copy password">
                             <IconButton
-                              aria-label="Regenerate password"
-                              icon={<FiRefreshCw />}
+                              aria-label="Copy password"
+                              icon={<FiCopy />}
                               size="xs"
                               variant="ghost"
-                              onClick={handleRegeneratePassword}
+                              onClick={handleCopyPassword}
                             />
                           </Tooltip>
-                        )}
-                        <Tooltip label="Copy password">
-                          <IconButton
-                            aria-label="Copy password"
-                            icon={<FiCopy />}
-                            size="xs"
-                            variant="ghost"
-                            onClick={handleCopyPassword}
-                          />
-                        </Tooltip>
-                        <IconButton
-                          aria-label={
-                            showPassword ? "Hide password" : "Show password"
-                          }
-                          icon={showPassword ? <FiEyeOff /> : <FiEye />}
-                          size="xs"
-                          variant="ghost"
-                          onClick={() => setShowPassword(!showPassword)}
-                        />
-                      </HStack>
-                    </InputRightElement>
-                  </InputGroup>
-                  <Text
-                    fontSize="xs"
-                    color="orange.600"
-                    mt={1}
-                    fontWeight="medium"
-                  >
-                    ⚠️ Password will be copied to clipboard on user creation
-                  </Text>
-                </FormControl>
+                          <Tooltip
+                            label={
+                              showPassword ? "Hide password" : "Show password"
+                            }
+                          >
+                            <IconButton
+                              aria-label={
+                                showPassword ? "Hide password" : "Show password"
+                              }
+                              icon={showPassword ? <FiEyeOff /> : <FiEye />}
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => setShowPassword(!showPassword)}
+                            />
+                          </Tooltip>
+                        </HStack>
+                      </InputRightElement>
+                    </InputGroup>
+                    <Text
+                      fontSize={fontSizes.body.caption}
+                      color="orange.600"
+                      mt={spacing.gaps.xs}
+                      fontWeight="medium"
+                    >
+                      ⚠️ Password will be copied to clipboard on user creation
+                    </Text>
+                  </FormControl>
+                </>
               )}
 
+              {/* Full Name Field */}
               <FormControl isRequired>
-                <FormLabel fontSize="xs" fontWeight="bold">
+                <FormLabel fontSize={formLabelSize} fontWeight="bold">
                   Full Name
                 </FormLabel>
                 <InputGroup>
-                  <InputLeftElement
-                    children={<Icon as={FiUser} color="gray.400" />}
-                  />
+                  <InputLeftElement>
+                    <Icon
+                      as={FiUser}
+                      color="gray.400"
+                      boxSize={componentSizes.icons.sm}
+                    />
+                  </InputLeftElement>
                   <Input
                     value={formData.full_name}
                     onChange={(e) =>
                       setFormData({ ...formData, full_name: e.target.value })
                     }
-                    placeholder="e.g. Jane Doe"
+                    placeholder="e.g., Jane Doe"
+                    size={inputSize}
+                    fontSize={fontSizes.body.medium}
                   />
                 </InputGroup>
               </FormControl>
 
-              <HStack width="full" spacing={4}>
+              {/* Role and Department Row - Responsive */}
+              <Stack
+                direction={{ base: "column", md: "row" }}
+                spacing={spacing.stackSpacing.md}
+                width="100%"
+              >
                 <FormControl isRequired>
-                  <FormLabel fontSize="xs" fontWeight="bold">
+                  <FormLabel fontSize={formLabelSize} fontWeight="bold">
                     Access Role
                   </FormLabel>
                   <InputGroup>
-                    <InputLeftElement
-                      children={<Icon as={FiShield} color="gray.400" />}
-                    />
+                    <InputLeftElement>
+                      <Icon
+                        as={FiShield}
+                        color="gray.400"
+                        boxSize={componentSizes.icons.sm}
+                      />
+                    </InputLeftElement>
                     <Select
                       pl="40px"
                       value={formData.role}
                       onChange={(e) =>
                         setFormData({ ...formData, role: e.target.value })
                       }
+                      size={inputSize}
                     >
                       <option value="staff">Staff</option>
                       <option value="director">Director</option>
@@ -428,13 +530,17 @@ export const UserForm: React.FC<UserFormProps> = ({
                 </FormControl>
 
                 <FormControl>
-                  <FormLabel fontSize="xs" fontWeight="bold">
+                  <FormLabel fontSize={formLabelSize} fontWeight="bold">
                     Department
                   </FormLabel>
                   <InputGroup>
-                    <InputLeftElement
-                      children={<Icon as={FiBriefcase} color="gray.400" />}
-                    />
+                    <InputLeftElement>
+                      <Icon
+                        as={FiBriefcase}
+                        color="gray.400"
+                        boxSize={componentSizes.icons.sm}
+                      />
+                    </InputLeftElement>
                     <Select
                       pl="40px"
                       value={formData.department_id}
@@ -445,26 +551,31 @@ export const UserForm: React.FC<UserFormProps> = ({
                         })
                       }
                       placeholder="Unassigned"
+                      size={inputSize}
                     >
                       {departments.map((d) => (
                         <option key={d.id} value={d.id}>
-                          {d.code}
+                          {d.code} - {d.name}
                         </option>
                       ))}
                     </Select>
                   </InputGroup>
                 </FormControl>
-              </HStack>
+              </Stack>
 
-              {/* Added Designation Field */}
+              {/* Designation Field */}
               <FormControl>
-                <FormLabel fontSize="xs" fontWeight="bold">
+                <FormLabel fontSize={formLabelSize} fontWeight="bold">
                   Designation
                 </FormLabel>
                 <InputGroup>
-                  <InputLeftElement
-                    children={<Icon as={FiAward} color="gray.400" />}
-                  />
+                  <InputLeftElement>
+                    <Icon
+                      as={FiAward}
+                      color="gray.400"
+                      boxSize={componentSizes.icons.sm}
+                    />
+                  </InputLeftElement>
                   <Select
                     pl="40px"
                     value={formData.designation_id}
@@ -476,26 +587,58 @@ export const UserForm: React.FC<UserFormProps> = ({
                     }
                     placeholder="Select designation"
                     isDisabled={loadingDesignations}
+                    size={inputSize}
                   >
-                    {designations?.map((d) => (
+                    {designations?.map((d: Designation) => (
                       <option key={d.id} value={d.id}>
-                        {d.name}
+                        {d.name} {d.code && `(${d.code})`}
                       </option>
                     ))}
                   </Select>
                 </InputGroup>
-                <Text fontSize="xs" color="gray.500" mt={1}>
+
+                {/* Loading state for designations */}
+                {loadingDesignations && (
+                  <HStack mt={spacing.gaps.xs} spacing={spacing.gaps.sm}>
+                    <Spinner size="xs" color="gray.400" />
+                    <Text fontSize={fontSizes.body.caption} color="gray.500">
+                      Loading designations...
+                    </Text>
+                  </HStack>
+                )}
+
+                <Text
+                  fontSize={fontSizes.body.caption}
+                  color="gray.500"
+                  mt={spacing.gaps.xs}
+                >
                   Job title/position (e.g., Director, Manager, Officer)
                 </Text>
               </FormControl>
             </VStack>
           </ModalBody>
 
-          <ModalFooter bg="gray.50" borderBottomRadius="xl">
-            <Button variant="ghost" mr={3} onClick={onClose}>
+          <ModalFooter
+            bg="gray.50"
+            borderBottomRadius="xl"
+            gap={spacing.gaps.md}
+            flexDirection={{ base: "column", sm: "row" }}
+          >
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              size={buttonSize}
+              width={{ base: "100%", sm: "auto" }}
+            >
               Cancel
             </Button>
-            <Button colorScheme="blue" type="submit" isLoading={isSubmitting}>
+            <Button
+              colorScheme="blue"
+              type="submit"
+              isLoading={isSubmitting}
+              size={buttonSize}
+              width={{ base: "100%", sm: "auto" }}
+            >
               {user ? "Save Changes" : "Create Account"}
             </Button>
           </ModalFooter>
