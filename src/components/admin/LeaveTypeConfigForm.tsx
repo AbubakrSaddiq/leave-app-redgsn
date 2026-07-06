@@ -114,6 +114,17 @@ export const LeaveTypeConfigForm: React.FC<LeaveTypeConfigFormProps> = ({
   }, [isOpen, existingConfig, leaveType, reset]);
 
   const onSubmit = async (data: LeaveTypeConfigFormData) => {
+    console.log("Form submitted with data:", data);
+
+    // Ensure numbers are submitted
+    const formattedData = {
+      ...data,
+      annual_days: Number(data.annual_days),
+      min_notice_days: Number(data.min_notice_days),
+      can_reapply: Boolean(data.can_reapply),
+    };
+    console.log("Formatted data:", formattedData);
+
     await onSuccess(data);
     onClose();
     reset();

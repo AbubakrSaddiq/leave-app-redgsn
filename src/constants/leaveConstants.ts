@@ -53,3 +53,13 @@ export const STUDY_PROGRAMS = [
     durationYears: 4,
   },
 ];
+
+export const FIXED_LEAVE_DURATIONS: Partial<Record<LeaveType, number>> = {
+  [LeaveType.PATERNITY]: 14,
+  [LeaveType.MATERNITY]: 112,
+
+};
+
+export const getFixedDuration = (type: LeaveType): number | null => {
+  return FIXED_LEAVE_DURATIONS[type] ?? null;
+};

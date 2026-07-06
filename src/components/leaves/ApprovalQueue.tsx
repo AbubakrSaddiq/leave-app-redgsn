@@ -1,11 +1,22 @@
+// src/components/approvals/ApprovalQueue.tsx
 import React from "react";
 import {
-  Box, Heading, Text, VStack, HStack, Select, Badge, Spinner,
-  Alert, AlertIcon, AlertDescription, SimpleGrid, Divider
+  Box,
+  HStack,
+  VStack,
+  Text,
+  Badge,
+  Select,
+  Spinner,
+  Center,
+  Alert,
+  AlertIcon,
+  SimpleGrid,
+  Divider,
 } from "@chakra-ui/react";
-import { LeaveApplicationCard } from "./LeaveApplicationCard";
-import { useApprovalQueue } from "@/hooks/useApprovalQueue";
+import { LeaveApplicationCard } from "@/components/leaves/LeaveApplicationCard";
 import { LeaveStatus } from "@/types/models";
+import { useApprovalQueue } from "@/hooks/useApprovalQueue";
 
 interface ApprovalQueueProps {
   role: "director" | "hr";
@@ -14,118 +25,119 @@ interface ApprovalQueueProps {
 export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({ role }) => {
   const {
     applications,
-    pendingCount,
-    rolePendingStatus,
+    regularPendingCount,
+    resumptionPendingCount,
+    totalPendingCount,
     statusFilter,
     setStatusFilter,
     isLoading,
     error,
     handleApprove,
     handleReject,
+    isProcessing,
   } = useApprovalQueue(role);
 
-  if (isLoading) return <LoadingState />;
-  if (error) return <ErrorState />;
+  if (isLoading) {
+    return (
+      <Center h="200px">
+        <Spinner size="xl" />
+      </Center>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert status="error" borderRadius="md">
+        <AlertIcon />
+        <Text>{error.message}</Text>
+      </Alert>
+    );
+  }
+
+  const roleLabel = role === "director" ? "Director" : "HR";
 
   return (
-    <VStack spacing={6} align="stretch">
-      <QueueHeader 
-        role={role} 
-        pendingCount={pendingCount} 
-        statusFilter={statusFilter} 
-        onFilterChange={setStatusFilter} 
-      />
+    <Box>
+      {/* Header with stats */}
+      <VStack align="stretch" spacing={4} mb={6}>
+        <HStack justify="space-between" wrap="wrap" gap={3}>
+          <HStack spacing={3}>
+            <Text fontSize="lg" fontWeight="bold">
+              {roleLabel} Approval Queue
+            </Text>
+            <Badge colorScheme="blue" fontSize="md" p={2} borderRadius="md">
+              {totalPendingCount} Pending
+            </Badge>
+          </HStack>
 
+          {/* Filter - MOVED OUTSIDE Select */}
+          <HStack spacing={3}>
+            <Text fontSize="sm" fontWeight="medium" color="gray.600">
+              Filter:
+            </Text>
+            <Select
+              size="sm"
+              width="200px"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+            >
+              <option value="all">All Pending</option>
+              <option
+                value={role === "director" ? "pending_director" : "pending_hr"}
+              >
+                Regular Leaves
+              </option>
+              <option
+                value={
+                  role === "director"
+                    ? "pending_resumption_director"
+                    : "pending_resumption_hr"
+                }
+              >
+                Resumption Requests
+              </option>
+            </Select>
+          </HStack>
+        </HStack>
+
+        {/* Stats summary */}
+        <HStack spacing={4} wrap="wrap">
+          <Badge colorScheme="orange" fontSize="sm" p={2}>
+            Regular: {regularPendingCount}
+          </Badge>
+          <Badge colorScheme="purple" fontSize="sm" p={2}>
+            Resumption: {resumptionPendingCount}
+          </Badge>
+        </HStack>
+        <Divider />
+      </VStack>
+
+      {/* Applications Grid */}
       {applications.length === 0 ? (
-        <EmptyState />
+        <Center py={10}>
+          <VStack spacing={3}>
+            <Text color="gray.500" fontSize="lg">
+              No pending requests
+            </Text>
+            <Text color="gray.400" fontSize="sm">
+              All caught up! 🎉
+            </Text>
+          </VStack>
+        </Center>
       ) : (
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-          {applications.map((app) => (
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+          {applications.map((application) => (
             <LeaveApplicationCard
-              key={app.id}
-              application={app}
-              showActions={app.status === rolePendingStatus}
+              key={application.id}
+              application={application}
               onApprove={handleApprove}
               onReject={handleReject}
+              showActions={true}
+              currentUserRole={role}
             />
           ))}
         </SimpleGrid>
       )}
-
-      <WorkflowGuide role={role} />
-    </VStack>
+    </Box>
   );
 };
-
-// --- Sub-components for better readability ---
-
-const QueueHeader = ({ role, pendingCount, statusFilter, onFilterChange }: any) => (
-  <HStack justify="space-between" align="center" wrap="wrap" gap={4}>
-    <Box>
-      <Heading size="lg" mb={1} textTransform="capitalize">
-        {role} Approval Queue
-      </Heading>
-      <HStack>
-        <Text color="gray.600">Review and manage leave requests</Text>
-        {pendingCount > 0 && (
-          <Badge colorScheme="orange" variant="solid" borderRadius="full" px={2}>
-            {pendingCount} Action Required
-          </Badge>
-        )}
-      </HStack>
-    </Box>
-
-    <Select
-      value={statusFilter}
-      onChange={(e) => onFilterChange(e.target.value as LeaveStatus | "all")}
-      width="220px"
-      bg="white"
-    >
-      <option value="all">Needs My Action</option>
-      <Divider />
-      <option value={LeaveStatus.PENDING_DIRECTOR}>Pending Director</option>
-      <option value={LeaveStatus.PENDING_HR}>Pending HR</option>
-      <option value={LeaveStatus.APPROVED}>Approved</option>
-      <option value={LeaveStatus.REJECTED}>Rejected</option>
-    </Select>
-  </HStack>
-);
-
-const WorkflowGuide = ({ role }: { role: "director" | "hr" }) => (
-  <Box bg="blue.50" p={4} borderRadius="lg" borderLeft="4px solid" borderLeftColor="blue.400">
-    <Text fontWeight="bold" fontSize="sm" mb={2} color="blue.800">📋 {role.toUpperCase()} RESPONSIBILITIES:</Text>
-    <VStack align="flex-start" spacing={1} fontSize="xs" color="blue.700">
-      {role === "director" ? (
-        <>
-          <Text>• Ensure team coverage during the requested period.</Text>
-          <Text>• Approval moves the request to HR for final validation.</Text>
-        </>
-      ) : (
-        <>
-          <Text>• Verify leave balance and adherence to company policy.</Text>
-          <Text>• Approval marks the request as Final and notifies the staff.</Text>
-        </>
-      )}
-    </VStack>
-  </Box>
-);
-
-const LoadingState = () => (
-  <Box textAlign="center" py={20}>
-    <Spinner size="xl" color="blue.500" thickness="4px" />
-    <Text mt={4} fontWeight="medium">Fetching applications...</Text>
-  </Box>
-);
-
-const ErrorState = () => (
-  <Alert status="error" borderRadius="md">
-    <AlertIcon />
-    <AlertDescription>We couldn't load the queue. Please refresh the page.</AlertDescription>
-  </Alert>
-);
-
-const EmptyState = () => (
-  <Box py={10} textAlign="center" border="2px dashed" borderColor="gray.200" borderRadius="xl">
-    <Text color="gray.500" fontSize="lg">No applications found in this category. 🎉</Text>
-  </Box>
-);

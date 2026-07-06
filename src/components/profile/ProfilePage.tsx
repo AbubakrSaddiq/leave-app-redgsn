@@ -87,30 +87,11 @@ export const ProfilePage: React.FC = () => {
   }, [profile, reset]);
 
   const onSubmit = async (data: any) => {
-    try {
-      await updateProfileMutation.mutateAsync({
-        full_name: data.full_name,
-      });
-      await refreshProfile();
-      setIsEditing(false);
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: isMobile ? "top" : "bottom-right",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Update failed",
-        description: error.message || "Something went wrong",
-        status: "error",
-        duration: 4000,
-        isClosable: true,
-        position: isMobile ? "top" : "bottom-right",
-      });
-    }
+    await updateProfileMutation.mutateAsync({
+      full_name: data.full_name,
+    });
+    await refreshProfile();
+    setIsEditing(false);
   };
 
   const onCancel = () => {

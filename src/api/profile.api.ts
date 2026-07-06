@@ -11,7 +11,7 @@ import type { User } from '@/types/models';
 
 export interface UpdateProfileParams {
   full_name?: string;
-  avatar_url?: string;
+
 }
 
 export interface ChangePasswordParams {
@@ -60,7 +60,7 @@ export async function getCurrentUserProfile(): Promise<User> {
 }
 
 /**
- * Update user profile (name, avatar)
+ * Update user profile (name)
  */
 export async function updateUserProfile(params: UpdateProfileParams): Promise<User> {
   try {
@@ -70,23 +70,18 @@ export async function updateUserProfile(params: UpdateProfileParams): Promise<Us
 
     if (!authUser) throw new Error('Not authenticated');
 
-    const { data, error } = await supabase
+    // Update the user
+    const { data, error:updateError } = await supabase
       .from('users')
       .update({
         full_name: params.full_name,
-        avatar_url: params.avatar_url,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', authUser.id)
-      .select(
-        `
-        *,
-        department:departments(id, name, code)
-      `
-      )
-      .single();
+      .eq('id', authUser.id);
 
-    if (error) throw error;
+    if (updateError) throw updateError;
+
+ 
     return data;
   } catch (error: any) {
     console.error('Error updating profile:', error);
@@ -127,62 +122,9 @@ export async function changePassword(params: ChangePasswordParams): Promise<void
   }
 }
 
-/**
- * Upload profile avatar
- */
-export async function uploadAvatar(file: File): Promise<string> {
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
-    if (!user) throw new Error('Not authenticated');
 
-    // Create unique filename
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
 
-    // Upload file
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, file, {
-        upsert: true,
-      });
-
-    if (uploadError) throw uploadError;
-
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('avatars').getPublicUrl(filePath);
-
-    return publicUrl;
-  } catch (error: any) {
-    console.error('Error uploading avatar:', error);
-    throw new Error(error.message || 'Failed to upload avatar');
-  }
-}
-
-/**
- * Delete profile avatar
- */
-export async function deleteAvatar(avatarUrl: string): Promise<void> {
-  try {
-    // Extract file path from URL
-    const urlParts = avatarUrl.split('/avatars/');
-    if (urlParts.length < 2) return;
-
-    const filePath = `avatars/${urlParts[1]}`;
-
-    const { error } = await supabase.storage.from('avatars').remove([filePath]);
-
-    if (error) throw error;
-  } catch (error: any) {
-    console.error('Error deleting avatar:', error);
-    throw new Error(error.message || 'Failed to delete avatar');
-  }
-}
 
 /**
  * Check password strength

@@ -48,7 +48,7 @@ export const useUsers = () => {
       return newUser;
     } catch (error: any) {
       toast({
-        title: "Creation failed",
+        title: "User creation failed",
         description: error.message,
         status: "error",
         duration: 4000,

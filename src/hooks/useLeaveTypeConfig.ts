@@ -1,6 +1,6 @@
 
 // ============================================
-// Leave Type Configuration Hook
+// Leave Type Configuration Hook - Better error handling
 // ============================================
 
 import { useState, useEffect, useCallback } from "react";
@@ -12,17 +12,21 @@ import { LEAVE_TYPE_LABELS } from "@/types/leaveType";
 export const useLeaveTypeConfigs = () => {
   const [configs, setConfigs] = useState<LeaveTypeConfig[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const toast = useToast();
 
   const fetchConfigs = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await leaveTypeConfigService.getAllConfigs();
       setConfigs(data);
     } catch (error: any) {
+      const errorMessage = error.message || "Error loading configurations";
+      setError(errorMessage);
       toast({
         title: "Error loading configurations",
-        description: error.message,
+        description: errorMessage,
         status: "error",
         duration: 4000,
       });
@@ -47,9 +51,10 @@ export const useLeaveTypeConfigs = () => {
       });
       return newConfig;
     } catch (error: any) {
+      const errorMessage = error.message || "Creation failed";
       toast({
         title: "Creation failed",
-        description: error.message,
+        description: errorMessage,
         status: "error",
         duration: 4000,
       });
@@ -59,8 +64,14 @@ export const useLeaveTypeConfigs = () => {
 
   const updateConfig = useCallback(async (leaveType: LeaveType, data: Partial<LeaveTypeConfigFormData>) => {
     try {
+      console.log("Updating config for:", leaveType, "with data:", data); // Debug log
+      
       const updatedConfig = await leaveTypeConfigService.updateConfig(leaveType, data);
-      setConfigs(prev => prev.map(c => c.leave_type === leaveType ? updatedConfig : c));
+      
+      setConfigs(prev => prev.map(c => 
+        c.leave_type === leaveType ? updatedConfig : c
+      ));
+      
       toast({
         title: "Configuration updated",
         description: `${LEAVE_TYPE_LABELS[leaveType]} has been updated`,
@@ -69,9 +80,11 @@ export const useLeaveTypeConfigs = () => {
       });
       return updatedConfig;
     } catch (error: any) {
+      const errorMessage = error.message || "Update failed";
+      console.error("Update error details:", error);
       toast({
         title: "Update failed",
-        description: error.message,
+        description: errorMessage,
         status: "error",
         duration: 4000,
       });
@@ -90,9 +103,10 @@ export const useLeaveTypeConfigs = () => {
         duration: 3000,
       });
     } catch (error: any) {
+      const errorMessage = error.message || "Deletion failed";
       toast({
         title: "Deletion failed",
-        description: error.message,
+        description: errorMessage,
         status: "error",
         duration: 4000,
       });
@@ -103,6 +117,7 @@ export const useLeaveTypeConfigs = () => {
   return {
     configs,
     loading,
+    error,
     fetchConfigs,
     createConfig,
     updateConfig,

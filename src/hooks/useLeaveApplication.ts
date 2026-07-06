@@ -9,10 +9,10 @@ import {
   getLeaveApplication,
   createLeaveApplication,
   validateLeaveApplication,
-  // approveLeaveApplication,
   updateLeaveStatus,
 } from '@/api/leaves.api';
 import type { CreateLeaveApplicationDto, LeaveStatus, LeaveType } from '@/types/models';
+import { leaveService } from '@/services/leaveService';
 
 // ============================================
 // QUERY HOOKS
@@ -72,7 +72,7 @@ export const useValidateLeaveApplication = (
 };
 
 // ============================================
-// MUTATION HOOKS
+// MUTATION HOOKS - REGULAR LEAVE
 // ============================================
 
 export const useCreateLeaveApplication = () => {
@@ -106,13 +106,11 @@ export const useCreateLeaveApplication = () => {
   });
 };
 
-
 export const useApproveLeaveApplication = () => {
   const queryClient = useQueryClient();
   const toast = useToast();
 
   return useMutation({
-    // mutationFn now accepts id, status, and comments
     mutationFn: ({ 
       id, 
       status, 
@@ -124,10 +122,8 @@ export const useApproveLeaveApplication = () => {
     }) => updateLeaveStatus(id, status, comments),
     
     onSuccess: (data) => {
-      // Refresh the list and the specific application
       queryClient.invalidateQueries({ queryKey: ['leave-applications'] });
       queryClient.invalidateQueries({ queryKey: ['leave-application', data.id] });
-      // Refresh balances in case this was the final approval
       queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
 
       toast({
@@ -150,45 +146,11 @@ export const useApproveLeaveApplication = () => {
   });
 };
 
-// Reject Leave Application
-
-// export const useRejectLeaveApplication = () => {
-//   const queryClient = useQueryClient();
-//   const toast = useToast();
-
-//   return useMutation({
-//     mutationFn: ({ id, comments }: { id: string; comments: string }) =>
-//       rejectLeaveApplication(id, comments),
-//     onSuccess: (data) => {
-//       queryClient.invalidateQueries({ queryKey: ['leave-applications'] });
-//       queryClient.invalidateQueries({ queryKey: ['leave-application', data.id] });
-
-//       toast({
-//         title: 'Application Rejected',
-//         description: `Application ${data.application_number} has been rejected.`,
-//         status: 'info',
-//         duration: 5000,
-//         isClosable: true,
-//       });
-//     },
-//     onError: (error: Error) => {
-//       toast({
-//         title: 'Rejection Failed',
-//         description: error.message,
-//         status: 'error',
-//         duration: 5000,
-//         isClosable: true,
-//       });
-//     },
-//   });
-// };
-
 export const useRejectLeaveApplication = () => {
   const queryClient = useQueryClient();
   const toast = useToast();
 
   return useMutation({
-    // We call the consolidated function and force 'rejected'
     mutationFn: ({ id, comments }: { id: string; comments: string }) =>
       updateLeaveStatus(id, 'rejected', comments), 
     
@@ -208,6 +170,148 @@ export const useRejectLeaveApplication = () => {
       toast({
         title: 'Rejection Failed',
         description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+  });
+};
+
+// ============================================
+// MUTATION HOOKS - RESUMPTION
+// ============================================
+
+/**
+ * Hook to request resumption for a leave that has ended
+ */
+export const useRequestResumption = () => {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (applicationId: string) =>
+      leaveService.requestResumption(applicationId),
+    onSuccess: (data) => {
+      toast({
+        title: 'Resumption Requested',
+        description: `Your resumption request for ${data.application_number} has been submitted for approval.`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      queryClient.invalidateQueries({ queryKey: ['leave-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['my-leave-applications'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to request resumption.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+  });
+};
+
+/**
+ * Hook for director to approve resumption
+ */
+export const useApproveResumptionDirector = () => {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ applicationId, comments }: { applicationId: string; comments?: string }) =>
+      leaveService.approveResumptionDirector(applicationId, comments),
+    onSuccess: (data) => {
+      toast({
+        title: 'Resumption Approved',
+        description: `Resumption request ${data.application_number} has been forwarded to HR for final approval.`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      queryClient.invalidateQueries({ queryKey: ['leave-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['director-leave-applications'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to approve resumption.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+  });
+};
+
+/**
+ * Hook for HR to approve resumption (final step)
+ */
+export const useApproveResumptionHR = () => {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ applicationId, comments }: { applicationId: string; comments?: string }) =>
+      leaveService.approveResumptionHR(applicationId, comments),
+    onSuccess: (data) => {
+      toast({
+        title: 'Resumption Finalized',
+        description: `Staff ${data.user?.full_name} has been marked as resumed.`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      queryClient.invalidateQueries({ queryKey: ['leave-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['hr-leave-applications'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to finalize resumption.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+  });
+};
+
+/**
+ * Hook to reject resumption (by director or HR)
+ */
+export const useRejectResumption = () => {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ 
+      applicationId, 
+      comments, 
+      role 
+    }: { 
+      applicationId: string; 
+      comments?: string;
+      role: 'director' | 'hr';
+    }) => leaveService.rejectResumption(applicationId, comments, role),
+    onSuccess: (data) => {
+      toast({
+        title: 'Resumption Rejected',
+        description: `Resumption request ${data.application_number} has been rejected.`,
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+      });
+      queryClient.invalidateQueries({ queryKey: ['leave-applications'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reject resumption.',
         status: 'error',
         duration: 5000,
         isClosable: true,

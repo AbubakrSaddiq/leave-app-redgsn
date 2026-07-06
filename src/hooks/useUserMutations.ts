@@ -71,7 +71,7 @@ export const useUpdateUser = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: UpdateUserData) => {
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from("users")
         .update({
           full_name: data.full_name,
@@ -81,11 +81,38 @@ export const useUpdateUser = () => {
         })
         .eq("id", id);
 
-      if (error) throw new Error(error.message);
+      if (updateError) throw new Error(updateError.message);
+
+      // Fetch the updated user
+      const {data:updatedUser, error: fetchError} = await supabase
+        .from("users")
+        .select(`*, departments(*), designations(*)`)
+        .eq("id", id)
+        .single();
+
+        if (fetchError){
+          // if fetch fails, still return partial data so update inst lost
+          console.warn("Failed to fetch updated user:", fetchError);
       return { id, ...data };
+
+        }
+
+        return updatedUser;
     },
-    onSuccess: () => {
+    onSuccess: (updatedUser, variables) => {
+      // Invalidate the users list
       queryClient.invalidateQueries({ queryKey: ["users"] });
+
+      // Update individual user cache
+      if (updatedUser && updatedUser.id) {
+        queryClient.setQueryData(["user", variables.id], updatedUser);
+      }
+
+      // If updating the current logged-in user, refresh profile
+      const currentUser = queryClient.getQueryData<any>(["current-profile"]);
+      if (currentUser?.id === variables.id) {
+        queryClient.invalidateQueries({ queryKey: ["current-profile"] });
+      }
     },
   });
 };

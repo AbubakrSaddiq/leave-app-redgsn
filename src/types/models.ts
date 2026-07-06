@@ -29,6 +29,9 @@ export enum LeaveStatus {
   PENDING_HR = 'pending_hr',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+  PENDING_RESUMPTION_DIRECTOR = 'pending_resumption_director',
+  PENDING_RESUMPTION_HR = 'pending_resumption_hr',
+  RESUMED = 'resumed',
 }
 
 export enum NotificationType {
@@ -38,6 +41,10 @@ export enum NotificationType {
   LEAVE_APPROVED = 'leave_approved',
   LEAVE_REJECTED = 'leave_rejected',
   BALANCE_LOW = 'balance_low',
+  RESUMPTION_PENDING_DIRECTOR = 'resumption_pending_director',
+  RESUMPTION_PENDING_HR = 'resumption_pending_hr',
+  RESUMPTION_APPROVED = 'resumption_approved',
+  RESUMPTION_REJECTED = 'resumption_rejected',
 }
 
 // ============================================
@@ -125,7 +132,14 @@ export interface LeaveApplication {
   updated_at: string;
   user?: User;
   director?: User;
-  study_program?: 'bsc' | 'msc' | 'phd'; 
+  study_program?: 'bsc' | 'msc' | 'phd';
+  resumption_requested_at?: string | null;
+  resumption_director_approved_at?: string | null;
+  resumption_director_comments?: string | null;
+  resumption_director_approved_by?: string | null;
+  resumption_hr_approved_at?: string | null;
+  resumption_hr_comments?: string | null;
+  resumption_hr_approved_by?: string | null;
 }
 
 export interface PublicHoliday {

@@ -93,8 +93,8 @@ interface UserFormProps {
   user?: User | null;
   departments: Department[];
   isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+  onClose: () => {};
+  onSuccess: () => {};
 }
 
 export const UserForm: React.FC<UserFormProps> = ({
@@ -223,8 +223,8 @@ export const UserForm: React.FC<UserFormProps> = ({
           position: isMobile ? "top" : "bottom-right",
         });
 
-        onSuccess();
-        onClose();
+        if (typeof onSuccess === "function") onSuccess();
+        if (typeof onClose === "function") onClose();
       } catch (error: any) {
         toast({
           title: "Update failed",
@@ -251,7 +251,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           title: "User created successfully",
           description:
             passwordOption === "auto"
-              ? "Generated password has been copied to clipboard"
+              ? "Generated password: ${formData.password}"
               : `Default password: ${DEFAULT_PASSWORD}`,
           status: "success",
           duration: 5000,
@@ -259,13 +259,8 @@ export const UserForm: React.FC<UserFormProps> = ({
           position: isMobile ? "top" : "bottom-right",
         });
 
-        // Auto-copy password for convenience
-        if (passwordOption === "auto") {
-          await navigator.clipboard.writeText(formData.password);
-        }
-
-        onSuccess();
-        onClose();
+        if (typeof onSuccess === "function") onSuccess();
+        if (typeof onClose === "function") onClose();
       } catch (error: any) {
         toast({
           title: "Creation failed",
@@ -309,6 +304,30 @@ export const UserForm: React.FC<UserFormProps> = ({
 
           <ModalBody py={spacing.stackSpacing.lg}>
             <VStack spacing={spacing.stackSpacing.md}>
+              {/* Full Name Field */}
+              <FormControl isRequired>
+                <FormLabel fontSize={formLabelSize} fontWeight="bold">
+                  Full Name
+                </FormLabel>
+                <InputGroup>
+                  <InputLeftElement>
+                    <Icon
+                      as={FiUser}
+                      color="gray.400"
+                      boxSize={componentSizes.icons.sm}
+                    />
+                  </InputLeftElement>
+                  <Input
+                    value={formData.full_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, full_name: e.target.value })
+                    }
+                    placeholder="e.g., Jane Doe"
+                    size={inputSize}
+                    fontSize={fontSizes.body.medium}
+                  />
+                </InputGroup>
+              </FormControl>
               {/* Email Field - Disabled in edit mode */}
               <FormControl isRequired isDisabled={!!user}>
                 <FormLabel fontSize={formLabelSize} fontWeight="bold">
@@ -464,36 +483,11 @@ export const UserForm: React.FC<UserFormProps> = ({
                       mt={spacing.gaps.xs}
                       fontWeight="medium"
                     >
-                      ⚠️ Password will be copied to clipboard on user creation
+                      ⚠️ Kindly copy password before user creation
                     </Text>
                   </FormControl>
                 </>
               )}
-
-              {/* Full Name Field */}
-              <FormControl isRequired>
-                <FormLabel fontSize={formLabelSize} fontWeight="bold">
-                  Full Name
-                </FormLabel>
-                <InputGroup>
-                  <InputLeftElement>
-                    <Icon
-                      as={FiUser}
-                      color="gray.400"
-                      boxSize={componentSizes.icons.sm}
-                    />
-                  </InputLeftElement>
-                  <Input
-                    value={formData.full_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, full_name: e.target.value })
-                    }
-                    placeholder="e.g., Jane Doe"
-                    size={inputSize}
-                    fontSize={fontSizes.body.medium}
-                  />
-                </InputGroup>
-              </FormControl>
 
               {/* Role and Department Row - Responsive */}
               <Stack

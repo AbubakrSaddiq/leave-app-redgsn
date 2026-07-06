@@ -1,3 +1,4 @@
+// src/components/leaves/LeaveApplicationForm.tsx
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -36,9 +37,13 @@ import {
 } from "react-icons/fi";
 import { useForm } from "react-hook-form";
 import { useCreateLeaveApplication } from "@/hooks/useLeaveApplication";
-import { LEAVE_TYPE_OPTIONS, STUDY_PROGRAMS } from "@/constants/leaveConstants";
+import {
+  LEAVE_TYPE_OPTIONS,
+  STUDY_PROGRAMS,
+  getFixedDuration, // NEW: import helper
+} from "@/constants/leaveConstants";
 import { formatDisplayDate } from "@/utils/dateUtils";
-import { format, addYears, subDays } from "date-fns";
+import { format, addYears, subDays, addDays } from "date-fns"; // added addDays
 import { LeaveType } from "@/types/models";
 import {
   useValidateLeaveDates,
@@ -110,6 +115,12 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
     (b) => b.leave_type === leaveType,
   );
 
+  // ── Helper: check if leave type has a fixed duration ─────────────────────
+  const isFixedDurationLeave =
+    leaveType === LeaveType.STUDY ||
+    leaveType === LeaveType.PATERNITY ||
+    leaveType === LeaveType.MATERNITY;
+
   // ── RESET form when leave type changes ────────────────────────────────────
   useEffect(() => {
     setWorkingDays(1);
@@ -124,11 +135,16 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
     }
   }, [leaveType, setValue]);
 
-  // Calculate end date for regular leave types
+  // ── Calculate end date ────────────────────────────────────────────────────
   useEffect(() => {
+    // Skip if startDate is not set
+    if (!startDate) return;
+
+    const fixedDays = getFixedDuration(leaveType);
+
+    // 1) STUDY LEAVE: program-based
     if (leaveType === LeaveType.STUDY) {
-      // Study leave: calculate based on program
-      if (startDate && studyProgram) {
+      if (studyProgram) {
         const program = STUDY_PROGRAMS.find((p) => p.value === studyProgram);
         if (program) {
           const start = new Date(startDate);
@@ -139,37 +155,50 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
           setValue("end_date", endDateStr);
           setValue("working_days", program.durationYears * 365);
           setWorkingDays(program.durationYears * 365);
-
-          // Resumption is next day after study leave
           setResumptionDate(
             format(addYears(start, program.durationYears), "yyyy-MM-dd"),
           );
         }
       }
-    } else {
-      // Regular leave: calculate based on working days
-      const updateDates = async () => {
-        if (!startDate || workingDays <= 0) return;
-
-        setIsCalculating(true);
-        try {
-          const endDate = await leaveService.calculateEndDate(
-            startDate,
-            workingDays,
-          );
-          const resumption =
-            await leaveService.calculateResumptionDate(endDate);
-
-          setCalculatedEndDate(endDate);
-          setResumptionDate(resumption);
-          setValue("end_date", endDate);
-          setValue("working_days", workingDays);
-        } finally {
-          setIsCalculating(false);
-        }
-      };
-      updateDates();
+      return;
     }
+
+    // 2) FIXED DURATION (Paternity / Maternity): use calendar days
+    if (fixedDays !== null) {
+      const start = new Date(startDate);
+      const end = addDays(start, fixedDays - 1); // inclusive end date
+      const endDateStr = format(end, "yyyy-MM-dd");
+      const resumptionStr = format(addDays(start, fixedDays), "yyyy-MM-dd");
+
+      setCalculatedEndDate(endDateStr);
+      setResumptionDate(resumptionStr);
+      setValue("end_date", endDateStr);
+      setValue("working_days", fixedDays);
+      setWorkingDays(fixedDays);
+      return;
+    }
+
+    // 3) OTHER LEAVES: use working days and the leave service
+    if (workingDays <= 0) return;
+
+    const updateDates = async () => {
+      setIsCalculating(true);
+      try {
+        const endDate = await leaveService.calculateEndDate(
+          startDate,
+          workingDays,
+        );
+        const resumption = await leaveService.calculateResumptionDate(endDate);
+
+        setCalculatedEndDate(endDate);
+        setResumptionDate(resumption);
+        setValue("end_date", endDate);
+        setValue("working_days", workingDays);
+      } finally {
+        setIsCalculating(false);
+      }
+    };
+    updateDates();
   }, [startDate, workingDays, leaveType, studyProgram, setValue]);
 
   // Validate annual leave against desired months
@@ -222,7 +251,29 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
     refetchDesiredMonths();
   };
 
-  const isStudyLeave = leaveType === LeaveType.STUDY;
+  // ── Render helpers ──────────────────────────────────────────────────────
+  // Determine labels for the summary
+  const isStudy = leaveType === LeaveType.STUDY;
+  const endDateLabel = isStudy
+    ? "PROGRAM END DATE"
+    : "END DATE (Last day of leave)";
+  const resumptionLabel = isStudy
+    ? "RETURN TO WORK DATE"
+    : "RESUMPTION DATE (Return to work)";
+
+  // Duration display
+  let durationDisplay: string;
+  if (isStudy) {
+    durationDisplay =
+      STUDY_PROGRAMS.find((p) => p.value === studyProgram)?.duration || "";
+  } else {
+    const fixed = getFixedDuration(leaveType);
+    if (fixed !== null) {
+      durationDisplay = `${fixed} ${fixed === 1 ? "day" : "days"}`;
+    } else {
+      durationDisplay = `${workingDays} ${workingDays === 1 ? "day" : "days"}`;
+    }
+  }
 
   return (
     <Box
@@ -266,7 +317,7 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
         </FormControl>
 
         {/* STUDY LEAVE: Program Selection */}
-        {isStudyLeave && (
+        {leaveType === LeaveType.STUDY && (
           <FormControl isRequired isInvalid={!!errors.study_program}>
             <FormLabel>Study Program</FormLabel>
             <Select
@@ -379,7 +430,7 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
         )}
 
         {/* Balance Alert (not for study leave) */}
-        {!isStudyLeave && currentBalance && (
+        {!isStudy && currentBalance && (
           <Alert
             status={currentBalance.available_days < 5 ? "warning" : "info"}
             borderRadius="md"
@@ -397,8 +448,8 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
         )}
 
         {/* Date Selection */}
-        {isStudyLeave ? (
-          // STUDY LEAVE: Only Start Date
+        {isFixedDurationLeave ? (
+          // Fixed duration leaves: only Start Date (no working days input)
           <FormControl isInvalid={!!errors.start_date} isRequired>
             <FormLabel>Start Date</FormLabel>
             <Input
@@ -408,14 +459,24 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
               })}
               size="lg"
               min={format(new Date(), "yyyy-MM-dd")}
+              isDisabled={isAnnualLeaveBlocked}
             />
             <FormErrorMessage>{errors.start_date?.message}</FormErrorMessage>
-            <FormHelperText>
-              Select when your study program begins
-            </FormHelperText>
+            {leaveType === LeaveType.STUDY && (
+              <FormHelperText>
+                Select when your study program begins
+              </FormHelperText>
+            )}
+            {(leaveType === LeaveType.PATERNITY ||
+              leaveType === LeaveType.MATERNITY) && (
+              <FormHelperText>
+                Leave duration is fixed at {getFixedDuration(leaveType)}{" "}
+                calendar days
+              </FormHelperText>
+            )}
           </FormControl>
         ) : (
-          // REGULAR LEAVE: Start Date + Working Days
+          // Regular leaves: Start Date + Working Days
           <HStack spacing={4} align="flex-start">
             <FormControl isInvalid={!!errors.start_date} isRequired flex={1}>
               <FormLabel>Start Date</FormLabel>
@@ -466,33 +527,22 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
               </AlertTitle>
               <VStack align="stretch" spacing={3}>
                 <SummaryItem
-                  label={
-                    isStudyLeave
-                      ? "PROGRAM END DATE"
-                      : "END DATE (Last day of leave)"
-                  }
+                  label={endDateLabel}
                   value={formatDisplayDate(calculatedEndDate)}
                   color="orange.700"
                 />
                 <SummaryItem
-                  label={
-                    isStudyLeave
-                      ? "RETURN TO WORK DATE"
-                      : "RESUMPTION DATE (Return to work)"
-                  }
+                  label={resumptionLabel}
                   value={formatDisplayDate(resumptionDate)}
                   color="green.700"
                 />
                 <Divider />
                 <HStack justify="space-between">
                   <Text fontSize="sm" fontWeight="bold">
-                    {isStudyLeave ? "Program Duration:" : "Total Working Days:"}
+                    {isStudy ? "Program Duration:" : "Leave Duration:"}
                   </Text>
                   <Badge colorScheme="purple" fontSize="md" px={3}>
-                    {isStudyLeave
-                      ? STUDY_PROGRAMS.find((p) => p.value === studyProgram)
-                          ?.duration
-                      : `${workingDays} ${workingDays === 1 ? "day" : "days"}`}
+                    {durationDisplay}
                   </Badge>
                 </HStack>
               </VStack>
@@ -538,7 +588,7 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
               minLength: { value: 10, message: "Minimum 10 characters" },
             })}
             placeholder={
-              isStudyLeave
+              isStudy
                 ? "Institution name, course details, etc..."
                 : "Provide a detailed reason..."
             }
