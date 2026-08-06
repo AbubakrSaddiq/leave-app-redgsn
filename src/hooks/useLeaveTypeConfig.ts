@@ -1,6 +1,5 @@
-
 // ============================================
-// Leave Type Configuration Hook - Better error handling
+// Leave Type Configuration Hook 
 // ============================================
 
 import { useState, useEffect, useCallback } from "react";
@@ -64,7 +63,7 @@ export const useLeaveTypeConfigs = () => {
 
   const updateConfig = useCallback(async (leaveType: LeaveType, data: Partial<LeaveTypeConfigFormData>) => {
     try {
-      console.log("Updating config for:", leaveType, "with data:", data); // Debug log
+      console.log("Updating config for:", leaveType, "with data:", data);
       
       const updatedConfig = await leaveTypeConfigService.updateConfig(leaveType, data);
       
@@ -72,8 +71,17 @@ export const useLeaveTypeConfigs = () => {
         c.leave_type === leaveType ? updatedConfig : c
       ));
       
+      // If the config wasn't in the list (was created during update), add it
+      setConfigs(prev => {
+        const exists = prev.some(c => c.leave_type === leaveType);
+        if (!exists) {
+          return [...prev, updatedConfig];
+        }
+        return prev;
+      });
+      
       toast({
-        title: "Configuration updated",
+        title: "Configuration saved",
         description: `${LEAVE_TYPE_LABELS[leaveType]} has been updated`,
         status: "success",
         duration: 3000,

@@ -12,6 +12,7 @@ import {
   validateLeaveDatesInDesiredMonths,
   getAllDesiredMonths,
   getUsersWithoutDesiredMonths,
+  clearUserDesiredMonths, // NEW
 } from '@/api/desiredLeaveMonths.api';
 import { supabase } from '@/lib/supabase';
 import type { SubmitDesiredMonthsDto } from '@/types/desiredLeaveMonths';
@@ -169,6 +170,55 @@ export const useSubmitDesiredMonths = () => {
     onError: (error: Error) => {
       toast({
         title: 'Submission Failed',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+  });
+};
+
+// ============================================
+// NEW: CLEAR DESIRED MONTHS MUTATION (Admin/HR)
+// ============================================
+
+/**
+ * Clear a user's desired months (Admin/HR only)
+ */
+export const useClearDesiredMonths = () => {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: (userId: string) => clearUserDesiredMonths(userId),
+    onSuccess: async (_, userId) => {
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['all-desired-months'] });
+      queryClient.invalidateQueries({ queryKey: ['users-without-desired-months'] });
+      
+      // Invalidate the specific user's queries if they're cached
+      queryClient.invalidateQueries({ 
+        queryKey: ['my-desired-months', userId] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['has-submitted-desired-months', userId] 
+      });
+      
+      // Also invalidate any profile queries
+      queryClient.invalidateQueries({ queryKey: ['current-profile'] });
+
+      toast({
+        title: 'Desired Months Cleared',
+        description: 'The staff member can now resubmit their desired leave months.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Clear Failed',
         description: error.message,
         status: 'error',
         duration: 5000,

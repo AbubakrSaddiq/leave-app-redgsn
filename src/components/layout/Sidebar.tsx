@@ -71,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     ...(profile?.role === "admin" || profile?.role === "hr"
       ? [{ icon: FiBarChart2, label: "Analytics", href: "/analytics" }]
       : []),
-    { icon: FiSettings, label: "Settings", href: "/settings" },
+    { icon: FiSettings, label: "More", href: "/settings" },
   ];
 
   return (
@@ -210,9 +210,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </Tooltip>
 
               <MenuList>
-                <MenuItem icon={<FiUser />}>Profile</MenuItem>
-                <MenuItem icon={<FiSettings />}>Settings</MenuItem>
-                <Divider my={2} />
                 <MenuItem
                   icon={<FiLogOut />}
                   color="naseni.danger"

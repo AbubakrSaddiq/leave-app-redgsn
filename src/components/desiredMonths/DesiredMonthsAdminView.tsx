@@ -3,7 +3,7 @@
 // For HR/Admin to monitor submission status
 // ============================================
 
-import React from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Card,
@@ -31,26 +31,87 @@ import {
   Alert,
   AlertIcon,
   AlertDescription,
-} from '@chakra-ui/react';
-import { FiCheckCircle, FiAlertCircle, FiCalendar } from 'react-icons/fi';
+  Button,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  useToast,
+} from "@chakra-ui/react";
+import {
+  FiCheckCircle,
+  FiAlertCircle,
+  FiCalendar,
+  FiTrash2,
+  FiRefreshCw,
+} from "react-icons/fi";
 import {
   useAllDesiredMonths,
   useUsersWithoutDesiredMonths,
-} from '@/hooks/useDesiredLeaveMonths';
-import { formatDate } from '@/utils/date.utils';
+  useClearDesiredMonths, // NEW
+} from "@/hooks/useDesiredLeaveMonths";
+import { formatDate } from "@/utils/date.utils";
 
 const MONTH_NAMES = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 export const DesiredMonthsAdminView: React.FC = () => {
-  const { data: allSubmissions, isLoading: loadingSubmissions } = useAllDesiredMonths();
-  const { data: usersWithout, isLoading: loadingUsers } = useUsersWithoutDesiredMonths();
+  const {
+    data: allSubmissions,
+    isLoading: loadingSubmissions,
+    refetch,
+  } = useAllDesiredMonths();
+  const { data: usersWithout, isLoading: loadingUsers } =
+    useUsersWithoutDesiredMonths();
+  const clearMutation = useClearDesiredMonths();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedUser, setSelectedUser] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const toast = useToast();
 
   const submittedCount = allSubmissions?.length || 0;
   const pendingCount = usersWithout?.length || 0;
   const totalUsers = submittedCount + pendingCount;
+
+  // Handle clear button click
+  const handleClearClick = (userId: string, userName: string) => {
+    setSelectedUser({ id: userId, name: userName });
+    onOpen();
+  };
+
+  // Handle confirm clear
+  const handleConfirmClear = async () => {
+    if (!selectedUser) return;
+
+    try {
+      await clearMutation.mutateAsync(selectedUser.id);
+      // Refetch data after successful clear
+      await refetch();
+      onClose();
+      setSelectedUser(null);
+    } catch (error) {
+      // Error is handled by the mutation
+      console.error("Clear error:", error);
+    }
+  };
 
   if (loadingSubmissions || loadingUsers) {
     return (
@@ -76,7 +137,7 @@ export const DesiredMonthsAdminView: React.FC = () => {
       </Box>
 
       {/* Statistics */}
-      <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={6}>
+      <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={6}>
         <Card>
           <CardBody>
             <Stat>
@@ -98,7 +159,7 @@ export const DesiredMonthsAdminView: React.FC = () => {
               <StatHelpText>
                 {totalUsers > 0
                   ? `${Math.round((submittedCount / totalUsers) * 100)}% complete`
-                  : 'No users'}
+                  : "No users"}
               </StatHelpText>
             </Stat>
           </CardBody>
@@ -123,8 +184,9 @@ export const DesiredMonthsAdminView: React.FC = () => {
         <Alert status="warning" borderRadius="md">
           <AlertIcon />
           <AlertDescription>
-            <strong>{pendingCount}</strong> user{pendingCount !== 1 ? 's have' : ' has'} not
-            submitted desired leave months yet. They will be prompted on login.
+            <strong>{pendingCount}</strong> user
+            {pendingCount !== 1 ? "s have" : " has"} not submitted desired leave
+            months yet. They will be prompted on login.
           </AlertDescription>
         </Alert>
       )}
@@ -158,7 +220,7 @@ export const DesiredMonthsAdminView: React.FC = () => {
                       {user.email}
                     </Td>
                     <Td fontSize="sm">
-                      {(user.department as any)?.name || 'N/A'}
+                      {(user.department as any)?.name || "N/A"}
                     </Td>
                     <Td>
                       <Badge colorScheme="orange" variant="subtle">
@@ -173,15 +235,20 @@ export const DesiredMonthsAdminView: React.FC = () => {
         </Card>
       )}
 
-      {/* Submitted Months Table */}
+      {/* Submitted Months Table - WITH CLEAR BUTTON */}
       <Card>
         <CardHeader borderBottomWidth="1px">
-          <Heading size="md">
-            <HStack>
-              <Icon as={FiCheckCircle} color="green.500" />
-              <Text>Submitted Desired Months</Text>
-            </HStack>
-          </Heading>
+          <HStack justify="space-between">
+            <Heading size="md">
+              <HStack>
+                <Icon as={FiCheckCircle} color="green.500" />
+                <Text>Submitted Desired Months</Text>
+              </HStack>
+            </Heading>
+            <Badge colorScheme="blue" fontSize="sm">
+              {submittedCount} submitted
+            </Badge>
+          </HStack>
         </CardHeader>
         <CardBody>
           {submittedCount === 0 ? (
@@ -199,42 +266,110 @@ export const DesiredMonthsAdminView: React.FC = () => {
                   <Th>Email</Th>
                   <Th>Desired Months</Th>
                   <Th>Submitted</Th>
+                  <Th textAlign="center">Actions</Th>
                 </Tr>
               </Thead>
               <Tbody>
-                {allSubmissions?.map((submission) => (
-                  <Tr key={submission.id}>
-                    <Td fontWeight="medium">
-                      {(submission.user as any)?.full_name || 'N/A'}
-                    </Td>
-                    <Td fontSize="sm" color="gray.600">
-                      {(submission.user as any)?.email || 'N/A'}
-                    </Td>
-                    <Td>
-                      <HStack spacing={1} flexWrap="wrap">
-                        {submission.preferred_months.map((monthNum) => (
-                          <Badge
-                            key={monthNum}
-                            colorScheme="blue"
-                            variant="subtle"
-                            fontSize="xs"
-                            px={2}
-                          >
-                            {MONTH_NAMES[monthNum - 1]}
-                          </Badge>
-                        ))}
-                      </HStack>
-                    </Td>
-                    <Td fontSize="sm" color="gray.600">
-                      {formatDate(submission.submitted_at)}
-                    </Td>
-                  </Tr>
-                ))}
+                {allSubmissions?.map((submission) => {
+                  const userName = (submission.user as any)?.full_name || "N/A";
+                  const userId = submission.user_id;
+
+                  return (
+                    <Tr key={submission.id}>
+                      <Td fontWeight="medium">{userName}</Td>
+                      <Td fontSize="sm" color="gray.600">
+                        {(submission.user as any)?.email || "N/A"}
+                      </Td>
+                      <Td>
+                        <HStack spacing={1} flexWrap="wrap">
+                          {submission.preferred_months.map((monthNum) => (
+                            <Badge
+                              key={monthNum}
+                              colorScheme="blue"
+                              variant="subtle"
+                              fontSize="xs"
+                              px={2}
+                            >
+                              {MONTH_NAMES[monthNum - 1]}
+                            </Badge>
+                          ))}
+                        </HStack>
+                      </Td>
+                      <Td fontSize="sm" color="gray.600">
+                        {formatDate(submission.submitted_at)}
+                      </Td>
+                      <Td>
+                        <Button
+                          size="xs"
+                          colorScheme="red"
+                          variant="ghost"
+                          leftIcon={<FiTrash2 />}
+                          onClick={() => handleClearClick(userId, userName)}
+                          isLoading={
+                            clearMutation.isPending &&
+                            clearMutation.variables === userId
+                          }
+                          isDisabled={clearMutation.isPending}
+                        >
+                          Clear
+                        </Button>
+                      </Td>
+                    </Tr>
+                  );
+                })}
               </Tbody>
             </Table>
           )}
         </CardBody>
       </Card>
+
+      {/* Clear Confirmation Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent>
+          <ModalHeader>Clear Desired Months</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Alert status="warning" borderRadius="md">
+                <AlertIcon />
+                <Text>
+                  This action will permanently delete the desired leave months
+                  for:
+                </Text>
+              </Alert>
+              <Box p={4} bg="gray.50" borderRadius="md" textAlign="center">
+                <Text fontSize="lg" fontWeight="bold">
+                  {selectedUser?.name}
+                </Text>
+              </Box>
+              <Text fontSize="sm" color="gray.600">
+                After clearing, the staff member will need to resubmit their
+                desired leave months before they can apply for annual leave.
+              </Text>
+              <Alert status="error" borderRadius="md" size="sm">
+                <AlertIcon />
+                <Text fontSize="sm">This action cannot be undone!</Text>
+              </Alert>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter gap={3}>
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="red"
+              leftIcon={<FiTrash2 />}
+              onClick={handleConfirmClear}
+              isLoading={clearMutation.isPending}
+              loadingText="Clearing..."
+            >
+              Yes, Clear
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </VStack>
   );
 };

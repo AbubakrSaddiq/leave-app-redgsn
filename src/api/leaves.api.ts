@@ -217,7 +217,7 @@ export async function createLeaveApplication(params: {
     if (params.leave_type === 'study' && !params.study_program) {
       throw new Error('Study program is required for study leave');
     }
-    
+
     // 1. Get user role to determine the starting status
     const { data: userProfile } = await supabase
       .from('users')

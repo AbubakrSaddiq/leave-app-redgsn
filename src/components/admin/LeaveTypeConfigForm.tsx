@@ -116,18 +116,24 @@ export const LeaveTypeConfigForm: React.FC<LeaveTypeConfigFormProps> = ({
   const onSubmit = async (data: LeaveTypeConfigFormData) => {
     console.log("Form submitted with data:", data);
 
-    // Ensure numbers are submitted
+    // Ensure proper data types
     const formattedData = {
       ...data,
-      annual_days: Number(data.annual_days),
-      min_notice_days: Number(data.min_notice_days),
+      annual_days: Number(data.annual_days) || 0,
+      min_notice_days: Number(data.min_notice_days) || 0,
       can_reapply: Boolean(data.can_reapply),
+      description: data.description || null,
     };
     console.log("Formatted data:", formattedData);
 
-    await onSuccess(data);
-    onClose();
-    reset();
+    try {
+      await onSuccess(formattedData);
+      onClose();
+      reset();
+    } catch (error) {
+      console.error("Form submission error:", error);
+      // Error is handled by the hook
+    }
   };
 
   return (

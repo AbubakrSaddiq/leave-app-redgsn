@@ -266,3 +266,71 @@ export async function getUsersWithoutDesiredMonths(): Promise<
     throw new Error(error.message || 'Failed to fetch users');
   }
 }
+
+// ============================================
+// NEW: CLEAR DESIRED MONTHS (Admin/HR only)
+// ============================================
+
+/**
+ * Clear/reset a user's desired leave months (Admin/HR only)
+ * This deletes the record and resets the has_submitted_desired_months flag
+ */
+export async function clearUserDesiredMonths(userId: string): Promise<void> {
+  try {
+    // First, verify the current user has admin or HR role
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+
+    if (!currentUser) throw new Error('Not authenticated');
+
+    // Check if current user is admin or HR
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (profileError) throw profileError;
+
+    if (profile?.role !== 'admin' && profile?.role !== 'hr') {
+      throw new Error('Only admin or HR can clear desired months');
+    }
+
+    // Get the user's current desired months record
+    const { data: desiredMonths, error: fetchError } = await supabase
+      .from('desired_leave_months')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      throw fetchError;
+    }
+
+    // If record exists, delete it
+    if (desiredMonths) {
+      const { error: deleteError } = await supabase
+        .from('desired_leave_months')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) throw deleteError;
+    }
+
+    // Reset the has_submitted_desired_months flag on the user
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ 
+        has_submitted_desired_months: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
+
+    if (updateError) throw updateError;
+
+  } catch (error: any) {
+    console.error('Error clearing desired months:', error);
+    throw new Error(error.message || 'Failed to clear desired months');
+  }
+}

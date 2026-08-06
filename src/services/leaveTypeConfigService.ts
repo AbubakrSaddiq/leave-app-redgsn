@@ -1,6 +1,5 @@
-
 // ============================================
-// Leave Type Configuration Service - Fixed for 406 error
+// Leave Type Configuration Service - FIXED
 // ============================================
 
 import { supabase } from "@/lib/supabase";
@@ -24,7 +23,7 @@ export const leaveTypeConfigService = {
       .from("leave_type_config")
       .select("*")
       .eq("leave_type", leaveType)
-      .maybeSingle(); // Use maybeSingle() instead of single() to avoid 406 when no rows
+      .maybeSingle();
 
     if (error) throw new Error(error.message);
     return data;
@@ -50,33 +49,60 @@ export const leaveTypeConfigService = {
 
   // Update configuration - FIXED VERSION
   async updateConfig(leaveType: LeaveType, data: Partial<LeaveTypeConfigFormData>): Promise<LeaveTypeConfig> {
-    // Build update object without leave_type (primary key shouldn't be updated)
+    // First, check if the configuration exists
+    const existingConfig = await this.getConfigByType(leaveType);
+    
+    // If it doesn't exist, create it instead
+    if (!existingConfig) {
+      console.log(`Config for ${leaveType} not found, creating new one...`);
+      const fullData: LeaveTypeConfigFormData = {
+        leave_type: leaveType,
+        annual_days: data.annual_days ?? 0,
+        min_notice_days: data.min_notice_days ?? 0,
+        can_reapply: data.can_reapply ?? false,
+        description: data.description ?? null,
+      };
+      return this.createConfig(fullData);
+    }
+
+    // Build update object
     const updateData: any = {};
     if (data.annual_days !== undefined) updateData.annual_days = data.annual_days;
     if (data.min_notice_days !== undefined) updateData.min_notice_days = data.min_notice_days;
     if (data.can_reapply !== undefined) updateData.can_reapply = data.can_reapply;
     if (data.description !== undefined) updateData.description = data.description;
     
-    // Don't include leave_type in update as it's the primary key
-    // If you need to change leave_type, you'd need to delete and recreate
+    // Remove any undefined values
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
 
-    const { data: result, error } = await supabase
+    // If no fields to update, return existing config
+    if (Object.keys(updateData).length === 0) {
+      return existingConfig;
+    }
+
+    // Perform the update
+    const { error } = await supabase
       .from("leave_type_config")
       .update(updateData)
-      .eq("leave_type", leaveType)
-      .select()
-      .maybeSingle(); // Use maybeSingle() to handle empty results gracefully
+      .eq("leave_type", leaveType);
 
     if (error) {
       console.error("Update error:", error);
       throw new Error(error.message);
     }
+
+    // Fetch the updated record
+    const updatedConfig = await this.getConfigByType(leaveType);
     
-    if (!result) {
-      throw new Error(`No configuration found for leave type: ${leaveType}`);
+    if (!updatedConfig) {
+      throw new Error(`Failed to fetch updated configuration for ${leaveType}`);
     }
-    
-    return result;
+
+    return updatedConfig;
   },
 
   // Delete configuration
@@ -94,23 +120,8 @@ export const leaveTypeConfigService = {
     const results: LeaveTypeConfig[] = [];
     
     for (const config of configs) {
-      const { data, error } = await supabase
-        .from("leave_type_config")
-        .upsert([{
-          leave_type: config.leave_type,
-          annual_days: config.annual_days,
-          min_notice_days: config.min_notice_days,
-          can_reapply: config.can_reapply,
-          description: config.description,
-        }], { onConflict: "leave_type" })
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Batch update error:", error);
-        throw new Error(error.message);
-      }
-      results.push(data);
+      const result = await this.updateConfig(config.leave_type, config);
+      results.push(result);
     }
     
     return results;

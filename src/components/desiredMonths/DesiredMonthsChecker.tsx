@@ -3,11 +3,11 @@
 // Displays modal if user hasn't submitted desired months
 // ============================================
 
-import React, { useEffect } from 'react';
-import { useDisclosure } from '@chakra-ui/react';
-import { useAuth } from '@/hooks/useAuth';
-import { useHasSubmittedDesiredMonths } from '@/hooks/useDesiredLeaveMonths';
-import { DesiredLeaveMonthsForm } from './DesiredLeaveMonthsForm';
+import React, { useEffect } from "react";
+import { useDisclosure } from "@chakra-ui/react";
+import { useAuth } from "@/hooks/useAuth";
+import { useHasSubmittedDesiredMonths } from "@/hooks/useDesiredLeaveMonths";
+import { DesiredLeaveMonthsForm } from "./DesiredLeaveMonthsForm";
 
 export const DesiredMonthsChecker: React.FC = () => {
   const { profile } = useAuth();
@@ -21,14 +21,14 @@ export const DesiredMonthsChecker: React.FC = () => {
       !isLoading &&
       hasSubmitted === false &&
       profile &&
-      (profile.role === 'staff' || profile.role === 'director')
+      (profile.role === "staff" || profile.role === "director")
     ) {
       onOpen();
     }
   }, [hasSubmitted, isLoading, profile, onOpen]);
 
   // Don't show modal for admin/hr
-  if (!profile || profile.role === 'admin' || profile.role === 'hr') {
+  if (!profile || profile.role === "admin" || profile.role === "hr") {
     return null;
   }
 
@@ -36,7 +36,7 @@ export const DesiredMonthsChecker: React.FC = () => {
     <DesiredLeaveMonthsForm
       isOpen={isOpen}
       onClose={onClose}
-      canClose={false} // User must submit before closing
+      canClose={true} // User must submit before closing
     />
   );
 };
