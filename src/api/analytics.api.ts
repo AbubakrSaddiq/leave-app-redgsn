@@ -1,351 +1,442 @@
-// ============================================
-// Analytics API
-// ============================================
-
+// src/api/analytics.api.ts
 import { supabase } from '@/lib/supabase';
-import type { LeaveType, LeaveStatus } from '@/types/models';
+import { LeaveStatus, LeaveType } from '@/types/models';
 
-// ============================================
-// TYPES
-// ============================================
-
-export interface DashboardAnalytics {
-  summary: {
-    total_applications: number;
-    pending_applications: number;
-    approved_applications: number;
-    rejected_applications: number;
-    average_approval_time_hours: number;
-  };
-  by_leave_type: Array<{
-    leave_type: LeaveType;
-    count: number;
-    total_days: number;
-  }>;
-  by_status: Array<{
-    status: LeaveStatus;
-    count: number;
-  }>;
-  by_department: Array<{
-    department_id: string;
-    department_name: string;
-    total_applications: number;
-    utilization_percentage: number;
-  }>;
-  monthly_trend: Array<{
-    month: string;
-    applications: number;
-    days_taken: number;
-  }>;
+export interface DepartmentStats {
+  department_id: string;
+  department_name: string;
+  department_code: string;
+  total_staff: number;
+  staff_on_leave: number;
+  staff_on_leave_percentage: number;
 }
 
-export interface LeaveUtilization {
-  year: number;
-  by_user: Array<{
-    user_id: string;
-    user_name: string;
-    department: string;
-    by_leave_type: Array<{
-      leave_type: LeaveType;
-      allocated: number;
-      used: number;
-      pending: number;
-      available: number;
-      utilization_percentage: number;
-    }>;
-    total_utilization_percentage: number;
-  }>;
+export interface ActiveLeave {
+  id: string;
+  application_number: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  department_id: string;
+  department_name: string;
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  working_days: number;
+  resumption_date: string;
+  status: LeaveStatus;
 }
 
-// ============================================
-// API FUNCTIONS
-// ============================================
-
-/**
- * Get dashboard analytics
- */
-export async function getDashboardAnalytics(params?: {
-  start_date?: string;
-  end_date?: string;
-  department_id?: string;
-}): Promise<DashboardAnalytics> {
-  try {
-    const { start_date, end_date, department_id } = params || {};
-
-    // Build query
-    let query = supabase
-      .from('leave_applications')
-      .select(`
-        *,
-        user:users(full_name, department_id, department:departments(name))
-      `);
-
-    if (start_date) {
-      query = query.gte('submitted_at', start_date);
-    }
-    if (end_date) {
-      query = query.lte('submitted_at', end_date);
-    }
-    if (department_id) {
-      query = query.eq('user.department_id', department_id);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    // Calculate summary statistics
-    const summary = {
-      total_applications: data.length,
-      pending_applications: data.filter(
-        (app: any) => app.status === 'pending_director' || app.status === 'pending_hr'
-      ).length,
-      approved_applications: data.filter((app: any) => app.status === 'approved').length,
-      rejected_applications: data.filter((app: any) => app.status === 'rejected').length,
-      average_approval_time_hours: calculateAverageApprovalTime(data),
-    };
-
-    // Group by leave type
-    const by_leave_type = groupByLeaveType(data);
-
-    // Group by status
-    const by_status = groupByStatus(data);
-
-    // Group by department (if admin/HR)
-    const by_department = await groupByDepartment(data);
-
-    // Monthly trend
-    const monthly_trend = calculateMonthlyTrend(data);
-
-    return {
-      summary,
-      by_leave_type,
-      by_status,
-      by_department,
-      monthly_trend,
-    };
-  } catch (error: any) {
-    console.error('Error fetching dashboard analytics:', error);
-    throw new Error(error.message || 'Failed to fetch analytics');
-  }
+export interface UpcomingLeave {
+  id: string;
+  application_number: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  department_id: string;
+  department_name: string;
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  working_days: number;
+  days_until_start: number;
+  status: LeaveStatus;
 }
 
-/**
- * Get leave utilization report
- */
-export async function getLeaveUtilization(params?: {
-  year?: number;
-  department_id?: string;
-}): Promise<LeaveUtilization> {
-  try {
-    const year = params?.year || new Date().getFullYear();
-    const { department_id } = params || {};
-
-    // Get all users with their balances
-    let query = supabase
-      .from('users')
-      .select(`
-        id,
-        full_name,
-        department:departments(name),
-        leave_balances(
-          leave_type,
-          allocated_days,
-          used_days,
-          pending_days,
-          available_days
-        )
-      `)
-      .eq('is_active', true)
-      .eq('leave_balances.year', year);
-
-    if (department_id) {
-      query = query.eq('department_id', department_id);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    // Transform data
-    const by_user = data.map((user: any) => {
-      const balances = user.leave_balances || [];
-      
-      const by_leave_type = balances.map((balance: any) => ({
-        leave_type: balance.leave_type,
-        allocated: balance.allocated_days,
-        used: balance.used_days,
-        pending: balance.pending_days,
-        available: balance.available_days,
-        utilization_percentage:
-          balance.allocated_days > 0
-            ? Math.round((balance.used_days / balance.allocated_days) * 100)
-            : 0,
-      }));
-
-      const total_allocated = balances.reduce(
-        (sum: number, b: any) => sum + b.allocated_days,
-        0
-      );
-      const total_used = balances.reduce((sum: number, b: any) => sum + b.used_days, 0);
-      const total_utilization_percentage =
-        total_allocated > 0 ? Math.round((total_used / total_allocated) * 100) : 0;
-
-      return {
-        user_id: user.id,
-        user_name: user.full_name,
-        department: user.department?.name || 'N/A',
-        by_leave_type,
-        total_utilization_percentage,
-      };
-    });
-
-    return {
-      year,
-      by_user,
-    };
-  } catch (error: any) {
-    console.error('Error fetching leave utilization:', error);
-    throw new Error(error.message || 'Failed to fetch utilization data');
-  }
+export interface LeaveTypeStats {
+  leave_type: LeaveType;
+  count: number;
+  percentage: number;
 }
 
-/**
- * Export analytics to CSV
- */
-export function exportAnalyticsToCSV(data: any[], filename: string) {
-  const headers = Object.keys(data[0] || {});
-  const csvContent = [
-    headers.join(','),
-    ...data.map((row) =>
-      headers.map((header) => JSON.stringify(row[header] || '')).join(',')
-    ),
-  ].join('\n');
+export interface DepartmentLeaveStats {
+  department_id: string;
+  department_name: string;
+  total_leaves: number;
+  active_leaves: number;
+  upcoming_leaves: number;
+  completed_leaves: number;
+}
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+export interface AnalyticsOverview {
+  total_staff: number;
+  total_on_leave: number;
+  total_upcoming_leaves: number;
+  total_completed_leaves: number;
+  leave_type_distribution: LeaveTypeStats[];
+  department_stats: DepartmentStats[];
+  active_leaves: ActiveLeave[];
+  upcoming_leaves: UpcomingLeave[];
+  department_leave_stats: DepartmentLeaveStats[];
 }
 
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
 
-function calculateAverageApprovalTime(applications: any[]): number {
-  const approvedApps = applications.filter((app) => app.status === 'approved');
+const getResumptionDate = (endDate: string): string => {
+  const date = new Date(endDate);
+  date.setDate(date.getDate() + 1);
+  return date.toISOString().split('T')[0];
+};
 
-  if (approvedApps.length === 0) return 0;
+const isLeaveActive = (startDate: string, endDate: string): boolean => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
+  
+  return start <= today && end >= today;
+};
 
-  const totalHours = approvedApps.reduce((sum, app) => {
-    const submitted = new Date(app.submitted_at);
-    const approved = new Date(app.hr_approved_at || app.director_approved_at);
-    const hours = (approved.getTime() - submitted.getTime()) / (1000 * 60 * 60);
-    return sum + hours;
-  }, 0);
+const isLeaveUpcoming = (startDate: string): boolean => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  
+  return start > today;
+};
 
-  return Math.round(totalHours / approvedApps.length);
-}
+const getDaysUntilStart = (startDate: string): number => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  
+  const diffTime = start.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
 
-function groupByLeaveType(applications: any[]) {
-  const grouped: Record<string, { count: number; total_days: number }> = {};
+// ============================================
+// ANALYTICS API
+// ============================================
 
-  applications.forEach((app) => {
-    if (!grouped[app.leave_type]) {
-      grouped[app.leave_type] = { count: 0, total_days: 0 };
+export const analyticsApi = {
+  /**
+   * Get analytics overview for a director (department-specific)
+   */
+  async getDirectorAnalytics(directorId: string): Promise<AnalyticsOverview> {
+    // 1. Get director's department
+    const { data: director, error: directorError } = await supabase
+      .from('users')
+      .select('department_id')
+      .eq('id', directorId)
+      .single();
+
+    if (directorError) throw directorError;
+    if (!director?.department_id) {
+      throw new Error('Director has no department assigned');
     }
-    grouped[app.leave_type].count++;
-    grouped[app.leave_type].total_days += app.working_days || 0;
-  });
 
-  return Object.entries(grouped).map(([leave_type, stats]) => ({
-    leave_type: leave_type as LeaveType,
-    count: stats.count,
-    total_days: Math.round(stats.total_days * 10) / 10,
-  }));
-}
+    const departmentId = director.department_id;
 
-function groupByStatus(applications: any[]) {
-  const grouped: Record<string, number> = {};
+    // 2. Get all staff in the department
+    const { data: staff, error: staffError } = await supabase
+      .from('users')
+      .select('id, full_name, email, department_id')
+      .eq('department_id', departmentId)
+      .eq('is_active', true);
 
-  applications.forEach((app) => {
-    grouped[app.status] = (grouped[app.status] || 0) + 1;
-  });
+    if (staffError) throw staffError;
 
-  return Object.entries(grouped).map(([status, count]) => ({
-    status: status as LeaveStatus,
-    count,
-  }));
-}
+    const staffIds = staff?.map(s => s.id) || [];
+    const totalStaff = staffIds.length;
 
-async function groupByDepartment(applications: any[]) {
-  try {
-    // Get department info
-    const { data: departments } = await supabase
-      .from('departments')
-      .select('id, name');
+    // 3. Get all leave applications for staff in department
+    const { data: leaves, error: leavesError } = await supabase
+      .from('leave_applications')
+      .select(`
+        *,
+        user:user_id (
+          id,
+          full_name,
+          email,
+          department:department_id (
+            id,
+            name,
+            code
+          )
+        )
+      `)
+      .in('user_id', staffIds)
+      .in('status', ['approved', 'pending_director', 'pending_hr', 'pending_resumption_director', 'pending_resumption_hr']);
 
-    const grouped: Record<
-      string,
-      { name: string; count: number; total_days: number }
-    > = {};
+    if (leavesError) throw leavesError;
 
-    applications.forEach((app) => {
-      const deptId = app.user?.department_id;
-      if (!deptId) return;
+    // 4. Process data
+    const activeLeaves: ActiveLeave[] = [];
+    const upcomingLeaves: UpcomingLeave[] = [];
+    const leaveTypeCount: Record<string, number> = {};
 
-      if (!grouped[deptId]) {
-        const dept = departments?.find((d) => d.id === deptId);
-        grouped[deptId] = {
-          name: dept?.name || 'Unknown',
-          count: 0,
-          total_days: 0,
-        };
+    leaves?.forEach((leave: any) => {
+      const status = leave.status;
+      const startDate = leave.start_date;
+      const endDate = leave.end_date;
+      const leaveType = leave.leave_type;
+
+      // Count by leave type
+      leaveTypeCount[leaveType] = (leaveTypeCount[leaveType] || 0) + 1;
+
+      // Check if active (ongoing)
+      if (isLeaveActive(startDate, endDate) && status === 'approved') {
+        activeLeaves.push({
+          id: leave.id,
+          application_number: leave.application_number,
+          user_id: leave.user_id,
+          user_name: leave.user?.full_name || 'Unknown',
+          user_email: leave.user?.email || '',
+          department_id: leave.user?.department?.id || departmentId,
+          department_name: leave.user?.department?.name || 'Unknown',
+          leave_type: leaveType,
+          start_date: startDate,
+          end_date: endDate,
+          working_days: leave.working_days,
+          resumption_date: getResumptionDate(endDate),
+          status: status,
+        });
       }
-      grouped[deptId].count++;
-      if (app.status === 'approved') {
-        grouped[deptId].total_days += app.working_days || 0;
+
+      // Check if upcoming
+      if (isLeaveUpcoming(startDate) && status === 'approved') {
+        upcomingLeaves.push({
+          id: leave.id,
+          application_number: leave.application_number,
+          user_id: leave.user_id,
+          user_name: leave.user?.full_name || 'Unknown',
+          user_email: leave.user?.email || '',
+          department_id: leave.user?.department?.id || departmentId,
+          department_name: leave.user?.department?.name || 'Unknown',
+          leave_type: leaveType,
+          start_date: startDate,
+          end_date: endDate,
+          working_days: leave.working_days,
+          days_until_start: getDaysUntilStart(startDate),
+          status: status,
+        });
       }
     });
 
-    return Object.entries(grouped).map(([id, stats]) => ({
-      department_id: id,
-      department_name: stats.name,
-      total_applications: stats.count,
-      utilization_percentage: 0, // TODO: Calculate based on total allocated days
+    // 5. Department stats
+    const departmentStats: DepartmentStats[] = [{
+      department_id: departmentId,
+      department_name: director?.department?.name || 'Unknown',
+      department_code: director?.department?.code || '',
+      total_staff: totalStaff,
+      staff_on_leave: activeLeaves.length,
+      staff_on_leave_percentage: totalStaff > 0 ? (activeLeaves.length / totalStaff) * 100 : 0,
+    }];
+
+    // 6. Leave type distribution
+    const leaveTypeDistribution: LeaveTypeStats[] = Object.entries(leaveTypeCount).map(([type, count]) => ({
+      leave_type: type as LeaveType,
+      count,
+      percentage: leaves?.length > 0 ? (count / leaves.length) * 100 : 0,
     }));
-  } catch (error) {
-    console.error('Error grouping by department:', error);
-    return [];
-  }
-}
 
-function calculateMonthlyTrend(applications: any[]) {
-  const grouped: Record<string, { applications: number; days_taken: number }> = {};
+    // 7. Department leave stats (only this department)
+    const departmentLeaveStats: DepartmentLeaveStats[] = [{
+      department_id: departmentId,
+      department_name: director?.department?.name || 'Unknown',
+      total_leaves: leaves?.length || 0,
+      active_leaves: activeLeaves.length,
+      upcoming_leaves: upcomingLeaves.length,
+      completed_leaves: leaves?.filter(l => !isLeaveActive(l.start_date, l.end_date) && !isLeaveUpcoming(l.start_date)).length || 0,
+    }];
 
-  applications.forEach((app) => {
-    const month = new Date(app.submitted_at).toISOString().substring(0, 7); // YYYY-MM
+    return {
+      total_staff: totalStaff,
+      total_on_leave: activeLeaves.length,
+      total_upcoming_leaves: upcomingLeaves.length,
+      total_completed_leaves: departmentLeaveStats[0].completed_leaves,
+      leave_type_distribution: leaveTypeDistribution,
+      department_stats: departmentStats,
+      active_leaves: activeLeaves,
+      upcoming_leaves: upcomingLeaves.sort((a, b) => a.days_until_start - b.days_until_start),
+      department_leave_stats: departmentLeaveStats,
+    };
+  },
 
-    if (!grouped[month]) {
-      grouped[month] = { applications: 0, days_taken: 0 };
-    }
-    grouped[month].applications++;
-    if (app.status === 'approved') {
-      grouped[month].days_taken += app.working_days || 0;
-    }
-  });
+  /**
+   * Get analytics overview for HR (organization-wide)
+   */
+  async getHRAnalytics(): Promise<AnalyticsOverview> {
+    // 1. Get all active staff
+    const { data: staff, error: staffError } = await supabase
+      .from('users')
+      .select('id, full_name, email, department_id')
+      .eq('is_active', true);
 
-  return Object.entries(grouped)
-    .map(([month, stats]) => ({
-      month,
-      applications: stats.applications,
-      days_taken: Math.round(stats.days_taken * 10) / 10,
-    }))
-    .sort((a, b) => a.month.localeCompare(b.month));
-}
+    if (staffError) throw staffError;
+
+    const staffIds = staff?.map(s => s.id) || [];
+    const totalStaff = staffIds.length;
+
+    // 2. Get all approved/pending leave applications
+    const { data: leaves, error: leavesError } = await supabase
+      .from('leave_applications')
+      .select(`
+        *,
+        user:user_id (
+          id,
+          full_name,
+          email,
+          department:department_id (
+            id,
+            name,
+            code
+          )
+        )
+      `)
+      .in('user_id', staffIds)
+      .in('status', ['approved', 'pending_director', 'pending_hr', 'pending_resumption_director', 'pending_resumption_hr']);
+
+    if (leavesError) throw leavesError;
+
+    // 3. Get all departments for stats
+    const { data: departments, error: deptError } = await supabase
+      .from('departments')
+      .select('id, name, code')
+      .order('name');
+
+    if (deptError) throw deptError;
+
+    // 4. Process data
+    const activeLeaves: ActiveLeave[] = [];
+    const upcomingLeaves: UpcomingLeave[] = [];
+    const leaveTypeCount: Record<string, number> = {};
+    const deptActiveCount: Record<string, number> = {};
+    const deptStaffCount: Record<string, number> = {};
+    const deptLeaveCount: Record<string, number> = {};
+
+    // Initialize department counts
+    departments?.forEach((dept: any) => {
+      deptStaffCount[dept.id] = 0;
+      deptActiveCount[dept.id] = 0;
+      deptLeaveCount[dept.id] = 0;
+    });
+
+    // Count staff per department
+    staff?.forEach((s: any) => {
+      if (s.department_id) {
+        deptStaffCount[s.department_id] = (deptStaffCount[s.department_id] || 0) + 1;
+      }
+    });
+
+    // Process leaves
+    leaves?.forEach((leave: any) => {
+      const status = leave.status;
+      const startDate = leave.start_date;
+      const endDate = leave.end_date;
+      const leaveType = leave.leave_type;
+      const deptId = leave.user?.department?.id;
+
+      // Count by leave type
+      leaveTypeCount[leaveType] = (leaveTypeCount[leaveType] || 0) + 1;
+
+      // Count by department
+      if (deptId) {
+        deptLeaveCount[deptId] = (deptLeaveCount[deptId] || 0) + 1;
+      }
+
+      // Check if active (ongoing)
+      if (isLeaveActive(startDate, endDate) && status === 'approved') {
+        if (deptId) {
+          deptActiveCount[deptId] = (deptActiveCount[deptId] || 0) + 1;
+        }
+
+        activeLeaves.push({
+          id: leave.id,
+          application_number: leave.application_number,
+          user_id: leave.user_id,
+          user_name: leave.user?.full_name || 'Unknown',
+          user_email: leave.user?.email || '',
+          department_id: deptId || '',
+          department_name: leave.user?.department?.name || 'Unknown',
+          leave_type: leaveType,
+          start_date: startDate,
+          end_date: endDate,
+          working_days: leave.working_days,
+          resumption_date: getResumptionDate(endDate),
+          status: status,
+        });
+      }
+
+      // Check if upcoming
+      if (isLeaveUpcoming(startDate) && status === 'approved') {
+        upcomingLeaves.push({
+          id: leave.id,
+          application_number: leave.application_number,
+          user_id: leave.user_id,
+          user_name: leave.user?.full_name || 'Unknown',
+          user_email: leave.user?.email || '',
+          department_id: deptId || '',
+          department_name: leave.user?.department?.name || 'Unknown',
+          leave_type: leaveType,
+          start_date: startDate,
+          end_date: endDate,
+          working_days: leave.working_days,
+          days_until_start: getDaysUntilStart(startDate),
+          status: status,
+        });
+      }
+    });
+
+    // 5. Department stats
+    const departmentStats: DepartmentStats[] = departments?.map((dept: any) => ({
+      department_id: dept.id,
+      department_name: dept.name,
+      department_code: dept.code,
+      total_staff: deptStaffCount[dept.id] || 0,
+      staff_on_leave: deptActiveCount[dept.id] || 0,
+      staff_on_leave_percentage: deptStaffCount[dept.id] > 0 
+        ? ((deptActiveCount[dept.id] || 0) / deptStaffCount[dept.id]) * 100 
+        : 0,
+    })) || [];
+
+    // 6. Leave type distribution
+    const leaveTypeDistribution: LeaveTypeStats[] = Object.entries(leaveTypeCount).map(([type, count]) => ({
+      leave_type: type as LeaveType,
+      count,
+      percentage: leaves?.length > 0 ? (count / leaves.length) * 100 : 0,
+    }));
+
+    // 7. Department leave stats
+    const departmentLeaveStats: DepartmentLeaveStats[] = departments?.map((dept: any) => {
+      const deptLeaves = leaves?.filter((l: any) => l.user?.department?.id === dept.id) || [];
+      const deptActive = deptLeaves.filter((l: any) => isLeaveActive(l.start_date, l.end_date) && l.status === 'approved');
+      const deptUpcoming = deptLeaves.filter((l: any) => isLeaveUpcoming(l.start_date) && l.status === 'approved');
+      
+      return {
+        department_id: dept.id,
+        department_name: dept.name,
+        total_leaves: deptLeaves.length,
+        active_leaves: deptActive.length,
+        upcoming_leaves: deptUpcoming.length,
+        completed_leaves: deptLeaves.filter((l: any) => 
+          !isLeaveActive(l.start_date, l.end_date) && 
+          !isLeaveUpcoming(l.start_date) && 
+          l.status === 'approved'
+        ).length,
+      };
+    }) || [];
+
+    return {
+      total_staff: totalStaff,
+      total_on_leave: activeLeaves.length,
+      total_upcoming_leaves: upcomingLeaves.length,
+      total_completed_leaves: leaves?.filter(l => 
+        !isLeaveActive(l.start_date, l.end_date) && 
+        !isLeaveUpcoming(l.start_date) && 
+        l.status === 'approved'
+      ).length || 0,
+      leave_type_distribution: leaveTypeDistribution,
+      department_stats: departmentStats,
+      active_leaves: activeLeaves,
+      upcoming_leaves: upcomingLeaves.sort((a, b) => a.days_until_start - b.days_until_start),
+      department_leave_stats: departmentLeaveStats,
+    };
+  },
+};

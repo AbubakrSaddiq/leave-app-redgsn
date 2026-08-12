@@ -1,4 +1,8 @@
-// src/components/leaves/LeaveApplicationForm.tsx
+// File: src/components/leaves/LeaveApplicationForm.tsx (REFACTORED)
+// ============================================
+// Leave Application Form - Mobile Responsive
+// ============================================
+
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -28,22 +32,29 @@ import {
   Icon,
   Link,
   useDisclosure,
+  useBreakpointValue,
+  Stack,
+  Card,
+  CardBody,
+  SimpleGrid,
 } from "@chakra-ui/react";
 import {
   FiAlertTriangle,
   FiCheckCircle,
   FiCalendar,
   FiBook,
+  FiClock,
+  FiInfo,
 } from "react-icons/fi";
 import { useForm } from "react-hook-form";
 import { useCreateLeaveApplication } from "@/hooks/useLeaveApplication";
 import {
   LEAVE_TYPE_OPTIONS,
   STUDY_PROGRAMS,
-  getFixedDuration, // NEW: import helper
+  getFixedDuration,
 } from "@/constants/leaveConstants";
 import { formatDisplayDate } from "@/utils/dateUtils";
-import { format, addYears, subDays, addDays } from "date-fns"; // added addDays
+import { format, addYears, subDays, addDays, addWeeks } from "date-fns";
 import { LeaveType } from "@/types/models";
 import {
   useValidateLeaveDates,
@@ -52,6 +63,12 @@ import {
 import { useMyLeaveBalances } from "@/hooks/useLeaveBalance";
 import { DesiredLeaveMonthsForm } from "@/components/desiredMonths/DesiredLeaveMonthsForm";
 import { leaveService } from "@/services/leaveService";
+import {
+  spacing,
+  fontSizes,
+  componentSizes,
+  useIsMobile,
+} from "@/styles/responsive";
 
 interface LeaveFormData {
   leave_type: LeaveType;
@@ -71,12 +88,25 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
+  // Responsive values
+  const isMobile = useIsMobile();
+  const isSmallScreen = useBreakpointValue({ base: true, sm: false });
+  const formSize = useBreakpointValue({ base: "md", md: "lg" });
+  const buttonSize = useBreakpointValue({ base: "md", md: "lg" });
+  const cardPadding = useBreakpointValue({ base: 4, md: 6 });
+  const summaryColumns = useBreakpointValue({ base: 1, sm: 2 });
+
   // Modal control for desired months form
   const {
     isOpen: isDesiredMonthsOpen,
     onOpen: onDesiredMonthsOpen,
     onClose: onDesiredMonthsClose,
   } = useDisclosure();
+
+  // ── Get default start date (14 days from today) ─────────────────────────
+  const getDefaultStartDate = () => {
+    return format(addWeeks(new Date(), 2), "yyyy-MM-dd");
+  };
 
   // Form state
   const {
@@ -89,7 +119,7 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
   } = useForm<LeaveFormData>({
     defaultValues: {
       leave_type: LeaveType.ANNUAL,
-      start_date: format(new Date(), "yyyy-MM-dd"),
+      start_date: getDefaultStartDate(),
       end_date: "",
       reason: "",
       working_days: 1,
@@ -128,8 +158,8 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
     setResumptionDate("");
     setValue("working_days", 1);
     setValue("end_date", "");
+    setValue("start_date", getDefaultStartDate());
 
-    // Clear study_program when not study leave
     if (leaveType !== LeaveType.STUDY) {
       setValue("study_program", undefined);
     }
@@ -137,7 +167,6 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
 
   // ── Calculate end date ────────────────────────────────────────────────────
   useEffect(() => {
-    // Skip if startDate is not set
     if (!startDate) return;
 
     const fixedDays = getFixedDuration(leaveType);
@@ -166,7 +195,7 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
     // 2) FIXED DURATION (Paternity / Maternity): use calendar days
     if (fixedDays !== null) {
       const start = new Date(startDate);
-      const end = addDays(start, fixedDays - 1); // inclusive end date
+      const end = addDays(start, fixedDays - 1);
       const endDateStr = format(end, "yyyy-MM-dd");
       const resumptionStr = format(addDays(start, fixedDays), "yyyy-MM-dd");
 
@@ -252,7 +281,6 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
   };
 
   // ── Render helpers ──────────────────────────────────────────────────────
-  // Determine labels for the summary
   const isStudy = leaveType === LeaveType.STUDY;
   const endDateLabel = isStudy
     ? "PROGRAM END DATE"
@@ -261,7 +289,6 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
     ? "RETURN TO WORK DATE"
     : "RESUMPTION DATE (Return to work)";
 
-  // Duration display
   let durationDisplay: string;
   if (isStudy) {
     durationDisplay =
@@ -275,21 +302,29 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
     }
   }
 
+  const selectedDate = new Date(startDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const minDate = addWeeks(today, 2);
+  const isLessThanNotice = selectedDate < minDate;
+
   return (
     <Box
       as="form"
       onSubmit={handleSubmit(onSubmit)}
       bg="white"
-      p={6}
+      p={cardPadding}
       borderRadius="lg"
       boxShadow="md"
+      w="100%"
     >
-      <VStack spacing={6} align="stretch">
+      <VStack spacing={spacing.stackSpacing.lg} align="stretch">
+        {/* Header */}
         <Box>
-          <Text fontSize="2xl" fontWeight="bold" mb={2}>
+          <Text fontSize={isMobile ? "xl" : "2xl"} fontWeight="bold" mb={1}>
             Apply for Leave
           </Text>
-          <Text color="gray.600">
+          <Text fontSize={fontSizes.body.small} color="gray.600">
             Fill in the details below to submit your leave request
           </Text>
         </Box>
@@ -298,8 +333,14 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
 
         {/* Leave Type Selection */}
         <FormControl isInvalid={!!errors.leave_type} isRequired>
-          <FormLabel>Leave Type</FormLabel>
-          <Select {...register("leave_type", { required: true })} size="lg">
+          <FormLabel fontSize={fontSizes.body.small} fontWeight="bold">
+            Leave Type
+          </FormLabel>
+          <Select
+            {...register("leave_type", { required: true })}
+            size={formSize}
+            fontSize={fontSizes.body.medium}
+          >
             {LEAVE_TYPE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -307,7 +348,7 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
             ))}
           </Select>
           {leaveType && (
-            <FormHelperText>
+            <FormHelperText fontSize={fontSizes.body.caption}>
               {
                 LEAVE_TYPE_OPTIONS.find((o) => o.value === leaveType)
                   ?.description
@@ -319,7 +360,9 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
         {/* STUDY LEAVE: Program Selection */}
         {leaveType === LeaveType.STUDY && (
           <FormControl isRequired isInvalid={!!errors.study_program}>
-            <FormLabel>Study Program</FormLabel>
+            <FormLabel fontSize={fontSizes.body.small} fontWeight="bold">
+              Study Program
+            </FormLabel>
             <Select
               {...register("study_program", {
                 required:
@@ -327,8 +370,9 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
                     ? "Study program is required"
                     : false,
               })}
-              size="lg"
+              size={formSize}
               placeholder="Select program"
+              fontSize={fontSizes.body.medium}
             >
               {STUDY_PROGRAMS.map((program) => (
                 <option key={program.value} value={program.value}>
@@ -336,9 +380,11 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
                 </option>
               ))}
             </Select>
-            <FormErrorMessage>{errors.study_program?.message}</FormErrorMessage>
+            <FormErrorMessage fontSize={fontSizes.body.small}>
+              {errors.study_program?.message}
+            </FormErrorMessage>
             {studyProgram && (
-              <FormHelperText>
+              <FormHelperText fontSize={fontSizes.body.caption}>
                 <Icon as={FiBook} mr={1} />
                 Duration:{" "}
                 {STUDY_PROGRAMS.find((p) => p.value === studyProgram)?.duration}
@@ -349,29 +395,37 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
 
         {/* Annual Leave - Desired Months Check */}
         {isAnnualLeaveBlocked && (
-          <Alert status="warning" borderRadius="md" variant="left-accent">
-            <AlertIcon />
-            <Box flex="1">
-              <AlertTitle>Desired Leave Months Required</AlertTitle>
-              <AlertDescription fontSize="sm" mt={2}>
+          <Alert
+            status="warning"
+            borderRadius="md"
+            variant="left-accent"
+            flexDirection={{ base: "column", sm: "row" }}
+            alignItems={{ base: "flex-start", sm: "center" }}
+          >
+            <AlertIcon boxSize={isMobile ? 4 : 5} />
+            <Box flex="1" w="100%">
+              <AlertTitle fontSize={isMobile ? "sm" : "md"}>
+                Desired Leave Months Required
+              </AlertTitle>
+              <AlertDescription fontSize={isMobile ? "xs" : "sm"} mt={1}>
                 Before applying for annual leave, you need to select your 2
                 desired leave months.
-                <br />
-                <Link
-                  color="blue.600"
-                  fontWeight="bold"
-                  onClick={onDesiredMonthsOpen}
-                  cursor="pointer"
-                  textDecoration="underline"
-                  _hover={{ color: "blue.800" }}
-                  mt={2}
-                  display="inline-flex"
-                  alignItems="center"
-                  gap={2}
-                >
-                  <Icon as={FiCalendar} />
-                  Click here to select your desired months
-                </Link>
+                <Box mt={2}>
+                  <Link
+                    color="blue.600"
+                    fontWeight="bold"
+                    onClick={onDesiredMonthsOpen}
+                    cursor="pointer"
+                    textDecoration="underline"
+                    _hover={{ color: "blue.800" }}
+                    display="inline-flex"
+                    alignItems="center"
+                    gap={1}
+                  >
+                    <Icon as={FiCalendar} boxSize={4} />
+                    Click here to select your desired months
+                  </Link>
+                </Box>
               </AlertDescription>
             </Box>
           </Alert>
@@ -379,11 +433,19 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
 
         {/* Show desired months for annual leave */}
         {leaveType === LeaveType.ANNUAL && desiredMonths && (
-          <Alert status="info" borderRadius="md" variant="left-accent">
-            <AlertIcon />
-            <Box flex="1">
-              <HStack justify="space-between" mb={2}>
-                <AlertTitle fontSize="sm">Your Desired Leave Months</AlertTitle>
+          <Alert
+            status="info"
+            borderRadius="md"
+            variant="left-accent"
+            flexDirection={{ base: "column", sm: "row" }}
+            alignItems={{ base: "flex-start", sm: "center" }}
+          >
+            <AlertIcon boxSize={isMobile ? 4 : 5} />
+            <Box flex="1" w="100%">
+              <HStack justify="space-between" mb={1} flexWrap="wrap" gap={1}>
+                <AlertTitle fontSize={isMobile ? "xs" : "sm"}>
+                  Your Desired Leave Months
+                </AlertTitle>
                 <Badge colorScheme="green" fontSize="xs">
                   <HStack spacing={1}>
                     <Icon as={FiCheckCircle} boxSize={3} />
@@ -391,8 +453,8 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
                   </HStack>
                 </Badge>
               </HStack>
-              <AlertDescription fontSize="sm" mt={2}>
-                <HStack spacing={2} flexWrap="wrap">
+              <AlertDescription fontSize={isMobile ? "xs" : "sm"} mt={1}>
+                <Stack direction="row" spacing={1} flexWrap="wrap" mb={1}>
                   {desiredMonths.preferred_months.map((monthNum) => {
                     const monthNames = [
                       "Jan",
@@ -412,7 +474,7 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
                       <Badge
                         key={monthNum}
                         colorScheme="blue"
-                        fontSize="xs"
+                        fontSize={isMobile ? "2xs" : "xs"}
                         px={2}
                         py={1}
                       >
@@ -420,8 +482,8 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
                       </Badge>
                     );
                   })}
-                </HStack>
-                <Text fontSize="xs" mt={2} color="gray.600">
+                </Stack>
+                <Text fontSize="xs" color="gray.600">
                   Your annual leave must fall within these months
                 </Text>
               </AlertDescription>
@@ -429,16 +491,20 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
           </Alert>
         )}
 
-        {/* Balance Alert (not for study leave) */}
+        {/* Balance Alert */}
         {!isStudy && currentBalance && (
           <Alert
             status={currentBalance.available_days < 5 ? "warning" : "info"}
             borderRadius="md"
+            flexDirection={{ base: "column", sm: "row" }}
+            alignItems={{ base: "flex-start", sm: "center" }}
           >
-            <AlertIcon />
-            <Box flex="1">
-              <AlertTitle>Current Balance</AlertTitle>
-              <AlertDescription>
+            <AlertIcon boxSize={isMobile ? 4 : 5} />
+            <Box flex="1" w="100%">
+              <AlertTitle fontSize={isMobile ? "xs" : "sm"}>
+                Current Balance
+              </AlertTitle>
+              <AlertDescription fontSize={isMobile ? "xs" : "sm"}>
                 Available: <strong>{currentBalance.available_days} days</strong>
                 {" / "}
                 Allocated: {currentBalance.allocated_days} days
@@ -449,58 +515,83 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
 
         {/* Date Selection */}
         {isFixedDurationLeave ? (
-          // Fixed duration leaves: only Start Date (no working days input)
           <FormControl isInvalid={!!errors.start_date} isRequired>
-            <FormLabel>Start Date</FormLabel>
+            <FormLabel fontSize={fontSizes.body.small} fontWeight="bold">
+              Start Date
+            </FormLabel>
             <Input
               type="date"
               {...register("start_date", {
                 required: "Start date is required",
               })}
-              size="lg"
-              min={format(new Date(), "yyyy-MM-dd")}
+              size={formSize}
               isDisabled={isAnnualLeaveBlocked}
+              min={format(new Date(), "yyyy-MM-dd")}
             />
-            <FormErrorMessage>{errors.start_date?.message}</FormErrorMessage>
-            {leaveType === LeaveType.STUDY && (
-              <FormHelperText>
-                Select when your study program begins
+            <FormHelperText fontSize={fontSizes.body.caption}>
+              <Icon as={FiCalendar} mr={1} />
+              Default: 14 days from today (recommended notice period)
+            </FormHelperText>
+            {isLessThanNotice && (
+              <FormHelperText
+                color="orange.500"
+                fontSize={fontSizes.body.caption}
+              >
+                <Icon as={FiAlertTriangle} mr={1} />
+                Less than 14 days notice. Please ensure sufficient notice.
               </FormHelperText>
             )}
-            {(leaveType === LeaveType.PATERNITY ||
-              leaveType === LeaveType.MATERNITY) && (
-              <FormHelperText>
-                Leave duration is fixed at {getFixedDuration(leaveType)}{" "}
-                calendar days
-              </FormHelperText>
-            )}
+            <FormErrorMessage fontSize={fontSizes.body.small}>
+              {errors.start_date?.message}
+            </FormErrorMessage>
           </FormControl>
         ) : (
-          // Regular leaves: Start Date + Working Days
-          <HStack spacing={4} align="flex-start">
-            <FormControl isInvalid={!!errors.start_date} isRequired flex={1}>
-              <FormLabel>Start Date</FormLabel>
+          <Stack
+            direction={{ base: "column", sm: "row" }}
+            spacing={spacing.stackSpacing.md}
+            align="flex-start"
+            w="100%"
+          >
+            <FormControl isInvalid={!!errors.start_date} isRequired flex="1">
+              <FormLabel fontSize={fontSizes.body.small} fontWeight="bold">
+                Start Date
+              </FormLabel>
               <Input
                 type="date"
                 {...register("start_date", {
                   required: "Start date is required",
                 })}
-                size="lg"
-                min={format(new Date(), "yyyy-MM-dd")}
+                size={formSize}
                 isDisabled={isAnnualLeaveBlocked}
+                min={format(new Date(), "yyyy-MM-dd")}
+                w="100%"
               />
-              <FormErrorMessage>{errors.start_date?.message}</FormErrorMessage>
+              {isLessThanNotice && (
+                <FormHelperText
+                  color="orange.500"
+                  fontSize={fontSizes.body.caption}
+                >
+                  <Icon as={FiAlertTriangle} mr={1} />
+                  Less than 14 days notice
+                </FormHelperText>
+              )}
+              <FormErrorMessage fontSize={fontSizes.body.small}>
+                {errors.start_date?.message}
+              </FormErrorMessage>
             </FormControl>
 
-            <FormControl isRequired flex={1}>
-              <FormLabel>Working Days</FormLabel>
+            <FormControl isRequired flex="1">
+              <FormLabel fontSize={fontSizes.body.small} fontWeight="bold">
+                Working Days
+              </FormLabel>
               <NumberInput
                 value={workingDays}
                 onChange={(_, value) => setWorkingDays(value || 1)}
                 min={1}
                 max={currentBalance?.available_days || 365}
-                size="lg"
+                size={formSize}
                 isDisabled={isAnnualLeaveBlocked}
+                w="100%"
               >
                 <NumberInputField />
                 <NumberInputStepper>
@@ -508,49 +599,89 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
                   <NumberDecrementStepper />
                 </NumberInputStepper>
               </NumberInput>
-              <FormHelperText>Excludes weekends & holidays</FormHelperText>
+              <FormHelperText fontSize={fontSizes.body.caption}>
+                Excludes weekends & holidays
+              </FormHelperText>
             </FormControl>
-          </HStack>
+          </Stack>
         )}
 
-        {/* Calculated Summary */}
+        {/* Calculated Summary - Mobile Responsive */}
         {calculatedEndDate && !isAnnualLeaveBlocked && (
           <Alert
-            status="info"
+            status={isLessThanNotice ? "warning" : "info"}
             variant="left-accent"
             borderRadius="md"
-            bg="blue.50"
+            bg={isLessThanNotice ? "orange.50" : "blue.50"}
           >
-            <Box flex="1">
-              <AlertTitle fontSize="md" mb={3} color="blue.900">
+            <Box flex="1" w="100%">
+              <AlertTitle
+                fontSize={isMobile ? "sm" : "md"}
+                mb={isMobile ? 2 : 3}
+                color={isLessThanNotice ? "orange.900" : "blue.900"}
+              >
                 📊 Leave Summary
               </AlertTitle>
-              <VStack align="stretch" spacing={3}>
+
+              <SimpleGrid columns={summaryColumns} spacing={spacing.gaps.md}>
                 <SummaryItem
                   label={endDateLabel}
                   value={formatDisplayDate(calculatedEndDate)}
                   color="orange.700"
+                  isMobile={isMobile}
                 />
                 <SummaryItem
                   label={resumptionLabel}
                   value={formatDisplayDate(resumptionDate)}
                   color="green.700"
+                  isMobile={isMobile}
                 />
-                <Divider />
-                <HStack justify="space-between">
-                  <Text fontSize="sm" fontWeight="bold">
+              </SimpleGrid>
+
+              <Divider my={spacing.gaps.md} />
+
+              <Stack
+                direction={{ base: "column", sm: "row" }}
+                justify="space-between"
+                spacing={spacing.gaps.sm}
+              >
+                <HStack spacing={2} flexWrap="wrap">
+                  <Text fontSize={isMobile ? "xs" : "sm"} fontWeight="bold">
                     {isStudy ? "Program Duration:" : "Leave Duration:"}
                   </Text>
-                  <Badge colorScheme="purple" fontSize="md" px={3}>
+                  <Badge
+                    colorScheme="purple"
+                    fontSize={isMobile ? "xs" : "sm"}
+                    px={2}
+                  >
                     {durationDisplay}
                   </Badge>
                 </HStack>
-              </VStack>
+
+                <HStack spacing={2} flexWrap="wrap">
+                  <Text
+                    fontSize={isMobile ? "xs" : "sm"}
+                    fontWeight="bold"
+                    color={isLessThanNotice ? "orange.600" : "blue.600"}
+                  >
+                    Notice Period:
+                  </Text>
+                  <Badge
+                    colorScheme={isLessThanNotice ? "orange" : "blue"}
+                    fontSize={isMobile ? "xs" : "sm"}
+                    px={2}
+                  >
+                    {isLessThanNotice
+                      ? "⚠️ Less than 14 days"
+                      : "14 days (recommended)"}
+                  </Badge>
+                </HStack>
+              </Stack>
             </Box>
           </Alert>
         )}
 
-        {/* Desired Months Validation (Annual Leave Only) */}
+        {/* Desired Months Validation */}
         {desiredMonthsValidation &&
           leaveType === LeaveType.ANNUAL &&
           !isValidatingDesiredMonths && (
@@ -558,6 +689,8 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
               status={desiredMonthsValidation.is_valid ? "success" : "error"}
               borderRadius="md"
               variant="left-accent"
+              flexDirection={{ base: "column", sm: "row" }}
+              alignItems={{ base: "flex-start", sm: "center" }}
             >
               <AlertIcon
                 as={
@@ -565,14 +698,15 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
                     ? FiCheckCircle
                     : FiAlertTriangle
                 }
+                boxSize={isMobile ? 4 : 5}
               />
-              <Box flex="1">
-                <AlertTitle fontSize="sm">
+              <Box flex="1" w="100%">
+                <AlertTitle fontSize={isMobile ? "xs" : "sm"}>
                   {desiredMonthsValidation.is_valid
                     ? "Dates Valid ✓"
                     : "Invalid Date Selection"}
                 </AlertTitle>
-                <AlertDescription fontSize="sm" mt={1}>
+                <AlertDescription fontSize={isMobile ? "xs" : "sm"} mt={0.5}>
                   {desiredMonthsValidation.message}
                 </AlertDescription>
               </Box>
@@ -581,7 +715,9 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
 
         {/* Reason Field */}
         <FormControl isInvalid={!!errors.reason} isRequired>
-          <FormLabel>Reason for Leave</FormLabel>
+          <FormLabel fontSize={fontSizes.body.small} fontWeight="bold">
+            Reason for Leave
+          </FormLabel>
           <Textarea
             {...register("reason", {
               required: "Reason is required",
@@ -592,30 +728,41 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
                 ? "Institution name, course details, etc..."
                 : "Provide a detailed reason..."
             }
-            size="lg"
-            rows={4}
+            size={formSize}
+            rows={isMobile ? 3 : 4}
             isDisabled={isAnnualLeaveBlocked}
+            fontSize={fontSizes.body.medium}
           />
-          <FormErrorMessage>{errors.reason?.message}</FormErrorMessage>
+          <FormErrorMessage fontSize={fontSizes.body.small}>
+            {errors.reason?.message}
+          </FormErrorMessage>
         </FormControl>
 
         {/* Error Display */}
         {createMutation.error && (
           <Alert status="error" borderRadius="md">
             <AlertIcon />
-            <AlertDescription>
+            <AlertDescription fontSize={isMobile ? "sm" : "md"}>
               {(createMutation.error as Error).message}
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Actions */}
-        <HStack spacing={4} justify="flex-end" pt={4}>
+        {/* Actions - Mobile Responsive */}
+        <Stack
+          direction={{ base: "column", sm: "row" }}
+          spacing={spacing.gaps.md}
+          justify="flex-end"
+          pt={spacing.gaps.md}
+          w="100%"
+        >
           {onCancel && (
             <Button
               variant="outline"
               onClick={onCancel}
               isDisabled={createMutation.isPending}
+              size={buttonSize}
+              w={{ base: "100%", sm: "auto" }}
             >
               Cancel
             </Button>
@@ -625,12 +772,13 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
             colorScheme="blue"
             isLoading={createMutation.isPending || isCalculating}
             loadingText={isCalculating ? "Calculating..." : "Submitting..."}
-            size="lg"
+            size={buttonSize}
             isDisabled={!canSubmit}
+            w={{ base: "100%", sm: "auto" }}
           >
             Submit Leave Request
           </Button>
-        </HStack>
+        </Stack>
       </VStack>
 
       {/* Desired Months Modal */}
@@ -643,21 +791,36 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
   );
 };
 
-const SummaryItem = ({
-  label,
-  value,
-  color,
-}: {
+// ── Summary Item Component ──
+interface SummaryItemProps {
   label: string;
   value: string;
   color: string;
-}) => (
-  <Box p={3} bg="white" borderRadius="md">
-    <Text fontSize="xs" color="gray.600" fontWeight="semibold" mb={1}>
+  isMobile?: boolean;
+}
+
+const SummaryItem = ({ label, value, color, isMobile }: SummaryItemProps) => (
+  <Box
+    p={isMobile ? 2 : 3}
+    bg="white"
+    borderRadius="md"
+    border="1px solid"
+    borderColor="gray.100"
+  >
+    <Text
+      fontSize={isMobile ? "2xs" : "xs"}
+      color="gray.600"
+      fontWeight="semibold"
+      mb={1}
+      letterSpacing="0.05em"
+    >
       {label}
     </Text>
-    <Text fontSize="md" fontWeight="bold" color={color}>
-      📅 {value}
-    </Text>
+    <HStack spacing={1}>
+      <Icon as={FiCalendar} boxSize={isMobile ? 3 : 4} color={color} />
+      <Text fontSize={isMobile ? "sm" : "md"} fontWeight="bold" color={color}>
+        {value}
+      </Text>
+    </HStack>
   </Box>
 );

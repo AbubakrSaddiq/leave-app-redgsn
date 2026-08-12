@@ -234,7 +234,7 @@ export const LeaveApplicationCard: React.FC<LeaveApplicationCardProps> = ({
       <CardBody>
         <VStack align="stretch" spacing={4}>
           {/* Top Row: Type & Status */}
-          <HStack justify="space-between">
+          <VStack justify="space-between">
             <HStack spacing={2}>
               <Badge
                 colorScheme={getLeaveTypeColor(application.leave_type)}
@@ -253,7 +253,7 @@ export const LeaveApplicationCard: React.FC<LeaveApplicationCardProps> = ({
             <Text fontSize="xs" color="gray.400" fontFamily="mono">
               #{application.application_number}
             </Text>
-          </HStack>
+          </VStack>
 
           {/* Study Program Badge (if study leave) */}
           {application.leave_type === "study" && application.study_program && (

@@ -68,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     ...(profile?.role === "director" || profile?.role === "hr"
       ? [{ icon: FiCheckCircle, label: "Approvals", href: "/approvals" }]
       : []),
-    ...(profile?.role === "admin" || profile?.role === "hr"
+    ...(profile?.role === "director" || profile?.role === "hr"
       ? [{ icon: FiBarChart2, label: "Analytics", href: "/analytics" }]
       : []),
     { icon: FiSettings, label: "More", href: "/settings" },

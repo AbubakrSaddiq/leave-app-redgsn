@@ -6,8 +6,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-
-// Page imports
 import DashboardPage from "@/components/pages/DashboardPage";
 import ApplyLeavePage from "@/components/pages/ApplyLeavePage";
 import MyApplicationsPage from "@/components/pages/MyApplicationsPage";
@@ -15,6 +13,7 @@ import ApprovalsPage from "@/components/pages/ApprovalsPage";
 import AnalyticsPage from "@/components/pages/AnalyticsPage";
 import SettingsPage from "@/components/pages/SettingsPage";
 import LandingPage from "@/components/pages/LandingPage";
+import { AnalyticsDashboard } from "@/components/analytics/AnalyticsDashboard";
 
 const router = createBrowserRouter([
   {
@@ -48,8 +47,8 @@ const router = createBrowserRouter([
       {
         path: "analytics",
         element: (
-          <ProtectedRoute allowedRoles={["admin", "hr"]}>
-            <AnalyticsPage />
+          <ProtectedRoute allowedRoles={["director", "hr"]}>
+            <AnalyticsDashboard />
           </ProtectedRoute>
         ),
       },

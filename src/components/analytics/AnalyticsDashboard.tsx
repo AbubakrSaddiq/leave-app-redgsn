@@ -1,521 +1,186 @@
-// ============================================
-// Analytics Dashboard Component
-// ============================================
-
-import React, { useState } from "react";
+// src/components/analytics/AnalyticsDashboard.tsx
+import React from "react";
 import {
   Box,
-  Grid,
+  Heading,
+  Text,
+  VStack,
+  HStack,
+  Badge,
+  SimpleGrid,
+  Spinner,
+  Center,
+  Alert,
+  AlertIcon,
   Stat,
   StatLabel,
   StatNumber,
   StatHelpText,
   Card,
-  CardHeader,
   CardBody,
-  Heading,
-  Select,
-  Button,
-  VStack,
-  HStack,
-  Text,
-  useToast,
-  Spinner,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Progress,
+  Icon,
+  Divider,
 } from "@chakra-ui/react";
-import { useQuery } from "@tanstack/react-query";
 import {
-  getDashboardAnalytics,
-  getLeaveUtilization,
-  exportAnalyticsToCSV,
-  type DashboardAnalytics,
-  type LeaveUtilization,
-} from "@/api/analytics.api";
-import { formatDate } from "@/utils/date.utils";
+  FiUsers,
+  FiUserCheck,
+  FiCalendar,
+  FiCheckCircle,
+  FiTrendingUp,
+  FiPieChart,
+  FiClock,
+} from "react-icons/fi";
+import { useAuth } from "@/hooks/useAuth";
+import { useDirectorAnalytics, useHRAnalytics } from "@/hooks/useAnalytics";
+import { DepartmentStats } from "./DepartmentStats";
+import { LeaveStatusChart } from "./LeaveStatusChart";
+import { ActiveLeaveTable } from "./ActiveLeaveTable";
+import { UpcomingLeaveTable } from "./UpcomingLeaveTable";
 
-// ============================================
-// SUMMARY STATS COMPONENT
-// ============================================
+export const AnalyticsDashboard: React.FC = () => {
+  const { profile } = useAuth();
+  const isDirector = profile?.role === "director";
+  const isHR = profile?.role === "hr" || profile?.role === "admin";
 
-interface SummaryStatsProps {
-  data: DashboardAnalytics["summary"];
-}
+  const directorQuery = useDirectorAnalytics();
+  const hrQuery = useHRAnalytics();
 
-function SummaryStats({ data }: SummaryStatsProps) {
-  return (
-    <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4} mb={6}>
-      <Card>
-        <CardBody>
-          <Stat>
-            <StatLabel>Total Applications</StatLabel>
-            <StatNumber>{data.total_applications}</StatNumber>
-            <StatHelpText>All time</StatHelpText>
-          </Stat>
-        </CardBody>
-      </Card>
+  // Determine which query to use
+  const { data, isLoading, error } = isDirector ? directorQuery : hrQuery;
 
-      <Card>
-        <CardBody>
-          <Stat>
-            <StatLabel>Pending</StatLabel>
-            <StatNumber color="orange.500">
-              {data.pending_applications}
-            </StatNumber>
-            <StatHelpText>Awaiting approval</StatHelpText>
-          </Stat>
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardBody>
-          <Stat>
-            <StatLabel>Approved</StatLabel>
-            <StatNumber color="green.500">
-              {data.approved_applications}
-            </StatNumber>
-            <StatHelpText>
-              {data.total_applications > 0
-                ? Math.round(
-                    (data.approved_applications / data.total_applications) * 100
-                  )
-                : 0}
-              % approval rate
-            </StatHelpText>
-          </Stat>
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardBody>
-          <Stat>
-            <StatLabel>Avg Approval Time</StatLabel>
-            <StatNumber>{data.average_approval_time_hours}h</StatNumber>
-            <StatHelpText>Average hours</StatHelpText>
-          </Stat>
-        </CardBody>
-      </Card>
-    </Grid>
-  );
-}
-
-// ============================================
-// LEAVE TYPE BREAKDOWN
-// ============================================
-
-interface LeaveTypeBreakdownProps {
-  data: DashboardAnalytics["by_leave_type"];
-}
-
-function LeaveTypeBreakdown({ data }: LeaveTypeBreakdownProps) {
-  const leaveTypeColors: Record<string, string> = {
-    annual: "blue",
-    casual: "green",
-    sick: "orange",
-    maternity: "pink",
-    paternity: "purple",
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <Heading size="md">Applications by Leave Type</Heading>
-      </CardHeader>
-      <CardBody>
-        <Table variant="simple" size="sm">
-          <Thead>
-            <Tr>
-              <Th>Leave Type</Th>
-              <Th isNumeric>Applications</Th>
-              <Th isNumeric>Total Days</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {data.map((item) => (
-              <Tr key={item.leave_type}>
-                <Td>
-                  <Badge colorScheme={leaveTypeColors[item.leave_type]}>
-                    {item.leave_type.toUpperCase()}
-                  </Badge>
-                </Td>
-                <Td isNumeric>{item.count}</Td>
-                <Td isNumeric>{item.total_days}</Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </CardBody>
-    </Card>
-  );
-}
-
-// ============================================
-// DEPARTMENT BREAKDOWN
-// ============================================
-
-interface DepartmentBreakdownProps {
-  data: DashboardAnalytics["by_department"];
-}
-
-function DepartmentBreakdown({ data }: DepartmentBreakdownProps) {
-  if (data.length === 0) {
+  if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <Heading size="md">By Department</Heading>
-        </CardHeader>
-        <CardBody>
-          <Text color="gray.500">No department data available</Text>
-        </CardBody>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <Heading size="md">Applications by Department</Heading>
-      </CardHeader>
-      <CardBody>
-        <VStack spacing={4} align="stretch">
-          {data.map((dept) => (
-            <Box key={dept.department_id}>
-              <HStack justify="space-between" mb={2}>
-                <Text fontWeight="bold">{dept.department_name}</Text>
-                <Badge>{dept.total_applications} applications</Badge>
-              </HStack>
-              <Progress
-                value={
-                  dept.total_applications > 0
-                    ? (dept.total_applications /
-                        Math.max(...data.map((d) => d.total_applications))) *
-                      100
-                    : 0
-                }
-                colorScheme="blue"
-                size="sm"
-              />
-            </Box>
-          ))}
+      <Center h="400px">
+        <VStack spacing={4}>
+          <Spinner size="xl" color="blue.500" thickness="4px" />
+          <Text>Loading analytics data...</Text>
         </VStack>
-      </CardBody>
-    </Card>
-  );
-}
-
-// ============================================
-// MONTHLY TREND CHART
-// ============================================
-
-interface MonthlyTrendProps {
-  data: DashboardAnalytics["monthly_trend"];
-}
-
-function MonthlyTrend({ data }: MonthlyTrendProps) {
-  if (data.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <Heading size="md">Monthly Trend</Heading>
-        </CardHeader>
-        <CardBody>
-          <Text color="gray.500">No trend data available</Text>
-        </CardBody>
-      </Card>
+      </Center>
     );
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <Heading size="md">Monthly Trend</Heading>
-      </CardHeader>
-      <CardBody>
-        <Table variant="simple" size="sm">
-          <Thead>
-            <Tr>
-              <Th>Month</Th>
-              <Th isNumeric>Applications</Th>
-              <Th isNumeric>Days Taken</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {data.map((item) => (
-              <Tr key={item.month}>
-                <Td>
-                  {new Date(item.month + "-01").toLocaleDateString("en-US", {
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </Td>
-                <Td isNumeric>{item.applications}</Td>
-                <Td isNumeric>{item.days_taken}</Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </CardBody>
-    </Card>
-  );
-}
+  if (error) {
+    return (
+      <Alert status="error" borderRadius="md">
+        <AlertIcon />
+        <Text>{(error as Error).message}</Text>
+      </Alert>
+    );
+  }
 
-// ============================================
-// UTILIZATION REPORT
-// ============================================
+  if (!data) {
+    return (
+      <Alert status="warning" borderRadius="md">
+        <AlertIcon />
+        <Text>No analytics data available</Text>
+      </Alert>
+    );
+  }
 
-interface UtilizationReportProps {
-  data: LeaveUtilization;
-}
-
-function UtilizationReport({ data }: UtilizationReportProps) {
-  return (
-    <Card>
-      <CardHeader>
-        <Heading size="md">Leave Utilization Report - {data.year}</Heading>
-      </CardHeader>
-      <CardBody>
-        <Table variant="simple" size="sm">
-          <Thead>
-            <Tr>
-              <Th>Employee</Th>
-              <Th>Department</Th>
-              <Th isNumeric>Utilization</Th>
-              <Th>Progress</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {data.by_user.map((user) => (
-              <Tr key={user.user_id}>
-                <Td>{user.user_name}</Td>
-                <Td>{user.department}</Td>
-                <Td isNumeric>{user.total_utilization_percentage}%</Td>
-                <Td width="200px">
-                  <Progress
-                    value={user.total_utilization_percentage}
-                    colorScheme={
-                      user.total_utilization_percentage > 80
-                        ? "green"
-                        : user.total_utilization_percentage > 50
-                        ? "yellow"
-                        : "blue"
-                    }
-                    size="sm"
-                  />
-                </Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </CardBody>
-    </Card>
-  );
-}
-
-// ============================================
-// MAIN ANALYTICS DASHBOARD
-// ============================================
-
-export function AnalyticsDashboard() {
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [dateRange, setDateRange] = useState<"all" | "month" | "year">("year");
-  const toast = useToast();
-
-  // Fetch dashboard analytics
-  const {
-    data: analytics,
-    isLoading: analyticsLoading,
-    refetch: refetchAnalytics,
-  } = useQuery({
-    queryKey: ["analytics", dateRange],
-    queryFn: () => {
-      const today = new Date();
-      let start_date: string | undefined;
-      let end_date: string | undefined;
-
-      if (dateRange === "month") {
-        start_date = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          1
-        ).toISOString();
-        end_date = new Date(
-          today.getFullYear(),
-          today.getMonth() + 1,
-          0
-        ).toISOString();
-      } else if (dateRange === "year") {
-        start_date = new Date(today.getFullYear(), 0, 1).toISOString();
-        end_date = new Date(today.getFullYear(), 11, 31).toISOString();
-      }
-
-      return getDashboardAnalytics({ start_date, end_date });
+  const stats = [
+    {
+      label: "Total Staff",
+      value: data.total_staff,
+      icon: FiUsers,
+      color: "blue",
     },
-  });
-
-  // Fetch utilization report
-  const {
-    data: utilization,
-    isLoading: utilizationLoading,
-    refetch: refetchUtilization,
-  } = useQuery({
-    queryKey: ["utilization", year],
-    queryFn: () => getLeaveUtilization({ year }),
-  });
-
-  const handleExportAnalytics = () => {
-    if (!analytics) return;
-
-    const exportData = [
-      ...analytics.by_leave_type.map((item) => ({
-        Type: "Leave Type",
-        Category: item.leave_type,
-        Count: item.count,
-        Total_Days: item.total_days,
-      })),
-      ...analytics.by_department.map((dept) => ({
-        Type: "Department",
-        Category: dept.department_name,
-        Count: dept.total_applications,
-        Total_Days: "-",
-      })),
-    ];
-
-    exportAnalyticsToCSV(
-      exportData,
-      `analytics-${new Date().toISOString().split("T")[0]}.csv`
-    );
-
-    toast({
-      title: "Exported successfully",
-      description: "Analytics data has been exported to CSV",
-      status: "success",
-      duration: 3000,
-    });
-  };
-
-  const handleExportUtilization = () => {
-    if (!utilization) return;
-
-    const exportData = utilization.by_user.flatMap((user) =>
-      user.by_leave_type.map((leave) => ({
-        Employee: user.user_name,
-        Department: user.department,
-        Leave_Type: leave.leave_type,
-        Allocated: leave.allocated,
-        Used: leave.used,
-        Pending: leave.pending,
-        Available: leave.available,
-        Utilization: leave.utilization_percentage + "%",
-      }))
-    );
-
-    exportAnalyticsToCSV(
-      exportData,
-      `utilization-${year}-${new Date().toISOString().split("T")[0]}.csv`
-    );
-
-    toast({
-      title: "Exported successfully",
-      description: "Utilization report has been exported to CSV",
-      status: "success",
-      duration: 3000,
-    });
-  };
-
-  if (analyticsLoading || utilizationLoading) {
-    return (
-      <Box textAlign="center" py={10}>
-        <Spinner size="xl" />
-        <Text mt={4}>Loading analytics...</Text>
-      </Box>
-    );
-  }
+    {
+      label: "Currently On Leave",
+      value: data.total_on_leave,
+      icon: FiUserCheck,
+      color: "green",
+    },
+    {
+      label: "Upcoming Leave",
+      value: data.total_upcoming_leaves,
+      icon: FiCalendar,
+      color: "orange",
+    },
+    {
+      label: "Completed Leaves",
+      value: data.total_completed_leaves,
+      icon: FiCheckCircle,
+      color: "purple",
+    },
+  ];
 
   return (
     <VStack spacing={6} align="stretch">
-      {/* Filters */}
-      <Card>
-        <CardBody>
-          <HStack spacing={4} wrap="wrap">
-            <Box>
-              <Text fontSize="sm" mb={1} fontWeight="medium">
-                Date Range
-              </Text>
-              <Select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value as any)}
-                width="200px"
-              >
-                <option value="all">All Time</option>
-                <option value="month">This Month</option>
-                <option value="year">This Year</option>
-              </Select>
-            </Box>
+      {/* Header */}
+      <Box>
+        <HStack justify="space-between" wrap="wrap" gap={3}>
+          <Box>
+            <Heading size="lg" mb={1}>
+              Analytics Dashboard
+            </Heading>
+            <Text color="gray.600">
+              {isDirector
+                ? "View analytics for your department"
+                : "View organization-wide analytics"}
+            </Text>
+          </Box>
+          <Badge
+            colorScheme={isDirector ? "blue" : "purple"}
+            fontSize="md"
+            p={2}
+          >
+            {isDirector ? "Director View" : "HR/Admin View"}
+          </Badge>
+        </HStack>
+        <Divider mt={4} />
+      </Box>
 
-            <Box>
-              <Text fontSize="sm" mb={1} fontWeight="medium">
-                Utilization Year
-              </Text>
-              <Select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                width="150px"
-              >
-                <option value={new Date().getFullYear() - 1}>
-                  {new Date().getFullYear() - 1}
-                </option>
-                <option value={new Date().getFullYear()}>
-                  {new Date().getFullYear()}
-                </option>
-                <option value={new Date().getFullYear() + 1}>
-                  {new Date().getFullYear() + 1}
-                </option>
-              </Select>
-            </Box>
+      {/* Stats Cards */}
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+        {stats.map((stat, index) => (
+          <Card
+            key={index}
+            borderLeft={`4px solid`}
+            borderLeftColor={`${stat.color}.500`}
+          >
+            <CardBody>
+              <Stat>
+                <StatLabel>
+                  <HStack spacing={2}>
+                    <Icon as={stat.icon} color={`${stat.color}.500`} />
+                    <Text>{stat.label}</Text>
+                  </HStack>
+                </StatLabel>
+                <StatNumber color={`${stat.color}.600`}>
+                  {stat.value}
+                </StatNumber>
+                <StatHelpText>
+                  {stat.label === "Total Staff" &&
+                    `${data.total_on_leave} currently on leave`}
+                  {stat.label === "Currently On Leave" &&
+                    `${data.total_staff > 0 ? ((data.total_on_leave / data.total_staff) * 100).toFixed(1) : 0}% of staff`}
+                  {stat.label === "Upcoming Leave" &&
+                    `${data.total_on_leave + data.total_upcoming_leaves} total leave requests`}
+                  {stat.label === "Completed Leaves" &&
+                    `${data.total_completed_leaves} leaves processed`}
+                </StatHelpText>
+              </Stat>
+            </CardBody>
+          </Card>
+        ))}
+      </SimpleGrid>
 
-            <Box ml="auto">
-              <Text fontSize="sm" mb={1} fontWeight="medium" opacity={0}>
-                Actions
-              </Text>
-              <HStack>
-                <Button
-                  size="sm"
-                  onClick={handleExportAnalytics}
-                  colorScheme="blue"
-                >
-                  Export Analytics
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleExportUtilization}
-                  colorScheme="green"
-                >
-                  Export Utilization
-                </Button>
-              </HStack>
-            </Box>
-          </HStack>
-        </CardBody>
-      </Card>
+      {/* Charts and Tables */}
+      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+        {/* Department Stats */}
+        <DepartmentStats stats={data.department_stats} />
 
-      {/* Summary Stats */}
-      {analytics && <SummaryStats data={analytics.summary} />}
+        {/* Leave Type Distribution */}
+        <LeaveStatusChart
+          leaveTypeDistribution={data.leave_type_distribution}
+        />
+      </SimpleGrid>
 
-      {/* Charts Grid */}
-      <Grid templateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }} gap={6}>
-        {analytics && <LeaveTypeBreakdown data={analytics.by_leave_type} />}
-        {analytics && <DepartmentBreakdown data={analytics.by_department} />}
-        {analytics && <MonthlyTrend data={analytics.monthly_trend} />}
-      </Grid>
+      {/* Active Leave Table */}
+      <ActiveLeaveTable leaves={data.active_leaves} />
 
-      {/* Utilization Report */}
-      {utilization && <UtilizationReport data={utilization} />}
+      {/* Upcoming Leave Table */}
+      <UpcomingLeaveTable leaves={data.upcoming_leaves} />
     </VStack>
   );
-}
+};
