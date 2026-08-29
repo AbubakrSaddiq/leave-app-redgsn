@@ -33,6 +33,7 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { authService } from "@/services/authService";
 import { motion } from "framer-motion";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface TopNavbarProps {
   onMenuClick?: () => void;
@@ -115,86 +116,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onMenuClick, title }) => {
 
         {/* Right section: Notifications + User menu */}
         <HStack spacing={4}>
-          {/* Notifications */}
-          {/* <Menu>
-            <MenuButton
-              as={IconButton}
-              icon={
-                <Box position="relative">
-                  <Icon as={FiBell} boxSize={5} color="naseni.gray.600" />
-                  <Badge
-                    position="absolute"
-                    top="-8px"
-                    right="-8px"
-                    fontSize="10px"
-                    colorScheme="red"
-                  >
-                    3
-                  </Badge>
-                </Box>
-              }
-              variant="ghost"
-              size="lg"
-              _hover={{ bg: "naseni.light" }}
-            />
-            <MenuList>
-              <MenuItem>New leave application received</MenuItem>
-              <MenuItem>Your leave was approved</MenuItem>
-              <MenuItem>Reminder: Submit desired months</MenuItem>
-              <Divider my={2} />
-              <MenuItem fontSize="sm" color="naseni.gray.500">
-                View all notifications
-              </MenuItem>
-            </MenuList>
-          </Menu> */}
-
-          {/* User menu */}
-          {/* <Menu placement="bottom-end">
-            <MenuButton
-              as={Box}
-              cursor="pointer"
-              _hover={{ opacity: 0.8 }}
-              transition="opacity 0.2s"
-            >
-              <HStack spacing={2}>
-                <VStack
-                  spacing={0}
-                  align="flex-end"
-                  display={{ base: "none", sm: "flex" }}
-                >
-                  <Text fontSize="xs" fontWeight="600" color="naseni.dark">
-                    {profile?.full_name}
-                  </Text>
-                  <Text
-                    fontSize="9px"
-                    color="naseni.gray.500"
-                    textTransform="capitalize"
-                  >
-                    {profile?.role}
-                  </Text>
-                </VStack>
-                <Avatar
-                  size="sm"
-                  name={profile?.full_name}
-                  src={profile?.avatar_url}
-                  boxShadow="sm"
-                />
-              </HStack>
-            </MenuButton>
-
-            <MenuList>
-              <MenuItem icon={<FiUser />}>Profile</MenuItem>
-              <MenuItem icon={<FiSettings />}>Settings</MenuItem>
-              <Divider my={2} />
-              <MenuItem
-                icon={<FiLogOut />}
-                color="naseni.danger"
-                onClick={() => authService.signOut()}
-              >
-                Logout
-              </MenuItem>
-            </MenuList>
-          </Menu> */}
+          <NotificationBell />
         </HStack>
       </HStack>
     </MotionBox>

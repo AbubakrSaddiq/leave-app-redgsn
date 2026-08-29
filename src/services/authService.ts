@@ -12,8 +12,8 @@ export const authService = {
       .from("users")
       .select("*, department:departments!department_id(*)")
       .eq("id", user.id)
-      .maybeSingle(); // Changed .single() to .maybeSingle() to prevent errors if row is missing
-
+      .maybeSingle(); 
+      
     if (error) {
       console.error("Supabase error fetching profile:", error.message);
       throw error;

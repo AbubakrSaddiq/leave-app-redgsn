@@ -3,7 +3,7 @@
 // Slide-out navigation for mobile/tablet
 // ============================================
 
-import React from 'react';
+import React from "react";
 import {
   Drawer,
   DrawerOverlay,
@@ -21,7 +21,7 @@ import {
   Divider,
   Button,
   Icon,
-} from '@chakra-ui/react';
+} from "@chakra-ui/react";
 import {
   FiHome,
   FiEdit,
@@ -32,31 +32,34 @@ import {
   FiChevronDown,
   FiLogOut,
   FiUser,
-} from 'react-icons/fi';
-import { useAuth } from '@/hooks/useAuth';
-import { authService } from '@/services/authService';
-import { NavItem } from './NavItem';
-import { motion } from 'framer-motion';
+} from "react-icons/fi";
+import { useAuth } from "@/hooks/useAuth";
+import { authService } from "@/services/authService";
+import { NavItem } from "./NavItem";
+import { motion } from "framer-motion";
 
 interface MobileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) => {
+export const MobileDrawer: React.FC<MobileDrawerProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const { profile } = useAuth();
 
   const navigationItems = [
-    { icon: FiHome, label: 'Dashboard', href: '/' },
-    { icon: FiEdit, label: 'Apply Leave', href: '/apply-leave' },
-    { icon: FiFileText, label: 'My Applications', href: '/my-applications' },
-    ...(profile?.role === 'director' || profile?.role === 'hr'
-      ? [{ icon: FiCheckCircle, label: 'Approvals', href: '/approvals' }]
+    { icon: FiHome, label: "Dashboard", href: "/" },
+    { icon: FiEdit, label: "Apply Leave", href: "/apply-leave" },
+    { icon: FiFileText, label: "My Applications", href: "/my-applications" },
+    ...(profile?.role === "director" || profile?.role === "hr"
+      ? [{ icon: FiCheckCircle, label: "Approvals", href: "/approvals" }]
       : []),
-    ...(profile?.role === 'admin' || profile?.role === 'hr'
-      ? [{ icon: FiBarChart2, label: 'Analytics', href: '/analytics' }]
+    ...(profile?.role === "director" || profile?.role === "hr"
+      ? [{ icon: FiBarChart2, label: "Analytics", href: "/analytics" }]
       : []),
-    { icon: FiSettings, label: 'Settings', href: '/settings' },
+    { icon: FiSettings, label: "Settings", href: "/settings" },
   ];
 
   const handleNavClick = () => {
@@ -69,7 +72,14 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
       <DrawerContent bg="white">
         <DrawerCloseButton />
 
-        <VStack height="100%" spacing={0} justify="space-between" pt={8} pb={6} px={4}>
+        <VStack
+          height="100%"
+          spacing={0}
+          justify="space-between"
+          pt={8}
+          pb={6}
+          px={4}
+        >
           {/* Header */}
           <Box width="100%" mb={8}>
             <HStack spacing={3}>
@@ -124,7 +134,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
                   p={3}
                   variant="ghost"
                   justifyContent="flex-start"
-                  _hover={{ bg: 'naseni.light' }}
+                  _hover={{ bg: "naseni.light" }}
                   borderRadius="lg"
                 >
                   <HStack spacing={2} width="100%">
@@ -151,14 +161,15 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
                         {profile.role}
                       </Text>
                     </VStack>
-                    <Icon as={FiChevronDown} boxSize={4} color="naseni.gray.400" />
+                    <Icon
+                      as={FiChevronDown}
+                      boxSize={4}
+                      color="naseni.gray.400"
+                    />
                   </HStack>
                 </MenuButton>
 
                 <MenuList>
-                  <MenuItem icon={<FiUser />}>Profile</MenuItem>
-                  <MenuItem icon={<FiSettings />}>Settings</MenuItem>
-                  <Divider my={2} />
                   <MenuItem
                     icon={<FiLogOut />}
                     color="naseni.danger"

@@ -14,6 +14,7 @@ import AnalyticsPage from "@/components/pages/AnalyticsPage";
 import SettingsPage from "@/components/pages/SettingsPage";
 import LandingPage from "@/components/pages/LandingPage";
 import { AnalyticsDashboard } from "@/components/analytics/AnalyticsDashboard";
+import { NotificationsPage } from "@/components/notifications/NotificationsPage";
 
 const router = createBrowserRouter([
   {
@@ -51,6 +52,10 @@ const router = createBrowserRouter([
             <AnalyticsDashboard />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "notifications",
+        element: <NotificationsPage />,
       },
       {
         path: "settings",

@@ -65,10 +65,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { icon: FiHome, label: "Dashboard", href: "/" },
     { icon: FiEdit, label: "Apply Leave", href: "/apply-leave" },
     { icon: FiFileText, label: "My Applications", href: "/my-applications" },
-    ...(profile?.role === "director" || profile?.role === "hr"
+    // Approvals - visible to directors and HR
+    ...(profile?.role === "director" ||
+    profile?.role === "hr" ||
+    profile?.role === "admin"
       ? [{ icon: FiCheckCircle, label: "Approvals", href: "/approvals" }]
       : []),
-    ...(profile?.role === "director" || profile?.role === "hr"
+    // Analytics - visible to directors, HR, and admin (FIXED)
+    ...(profile?.role === "director" ||
+    profile?.role === "hr" ||
+    profile?.role === "admin"
       ? [{ icon: FiBarChart2, label: "Analytics", href: "/analytics" }]
       : []),
     { icon: FiSettings, label: "More", href: "/settings" },
