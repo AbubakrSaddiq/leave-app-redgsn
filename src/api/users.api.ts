@@ -110,7 +110,7 @@ export async function getUsers(filters?: UserFilters): Promise<PaginatedUsers> {
     if (error) throw error;
 
     return {
-      data: data || [],
+      data: (data || []) as any as User[],
       pagination: {
         page,
         limit,
@@ -143,7 +143,7 @@ export async function getUserById(id: string): Promise<User> {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as any as User;
   } catch (error: any) {
     console.error('Error fetching user:', error);
     throw new Error(error.message || 'Failed to fetch user');
@@ -242,14 +242,14 @@ export async function createUser(params: CreateUserParams): Promise<User> {
         const { error: allocError } = await supabase.rpc('allocate_leave_for_user', {
           p_user_id: authData.user.id,
           p_year: new Date().getFullYear(),
-          // p_hire_date: null,
+
         });
 
         if (allocError) {
           console.error('Leave allocation error:', allocError);
         }
 
-        return insertedUser;
+        return insertedUser as any as User;
       }
       
       throw userError;
@@ -260,7 +260,7 @@ export async function createUser(params: CreateUserParams): Promise<User> {
     const { error: allocError } = await supabase.rpc('allocate_leave_for_user', {
       p_user_id: authData.user.id,
       p_year: new Date().getFullYear(),
-      // p_hire_date: null,
+
     });
 
     if (allocError) {
@@ -269,7 +269,7 @@ export async function createUser(params: CreateUserParams): Promise<User> {
     }
 
     console.log('User created successfully:', userData);
-    return userData;
+    return userData as any as User;
   } catch (error: any) {
     console.error('Error creating user:', error);
     throw new Error(error.message || 'Failed to create user');
@@ -299,7 +299,7 @@ export async function updateUser(
       .single();
 
     if (error) throw error;
-    return data;
+    return data as any as User;
   } catch (error: any) {
     console.error('Error updating user:', error);
     throw new Error(error.message || 'Failed to update user');
@@ -409,7 +409,7 @@ export async function getUserStatistics(): Promise<{
 
     const total_users = users?.length || 0;
     const active_users = users?.filter((u) => u.is_active).length || 0;
-
+    const typedUsers = (users || []) as any[];
     // Group by role
     const roleGroups: Record<string, number> = {};
     users?.forEach((u) => {

@@ -37,6 +37,7 @@ export const BalanceDashboard: React.FC = () => {
   const headingSize = useBreakpointValue({ base: "md", sm: "lg" });
   const statLayout = useBreakpointValue({ base: "vertical", md: "horizontal" });
   const isMobile = useBreakpointValue({ base: true, md: false });
+  const balanceData = data || { balances: [] };
 
   if (isLoading) {
     return (
@@ -212,9 +213,10 @@ export const BalanceDashboard: React.FC = () => {
       </Box>
 
       {/* Low Balance Warning Alert - Mobile friendly */}
-      {data.balances.some(
-        (b) => b.available_days > 0 && b.available_days <= 5,
-      ) && (
+      {(balanceData?.balances?.filter(
+        (b: any) => (b.available_days ?? 0) > 0 && (b.available_days ?? 0) <= 5,
+      ) ||
+        []) && (
         <Alert
           status="warning"
           borderRadius="md"
@@ -240,7 +242,7 @@ export const BalanceDashboard: React.FC = () => {
         gap={{ base: 3, md: 4, lg: 6 }}
       >
         {data.balances.map((balance) => (
-          <BalanceCard key={balance.id} balance={balance} />
+          <BalanceCard key={balance.id} balance={balance as any} />
         ))}
       </Grid>
     </VStack>

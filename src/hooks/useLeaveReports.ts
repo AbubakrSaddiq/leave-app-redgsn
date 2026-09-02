@@ -75,7 +75,7 @@ export function useLeaveReports() {
 
     setIsGenerating(true);
     try {
-      await generateLeaveReportPdf(reports, filters);
+      await generateLeaveReportPdf(reports as any, filters);
       toast({
         title: 'Report generated successfully',
         description: 'Your PDF file is ready for download',

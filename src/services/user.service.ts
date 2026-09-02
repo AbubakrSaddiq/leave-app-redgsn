@@ -37,7 +37,7 @@ export const userService = {
     const { data, error } = await query;
 
     if (error) throw new Error(error.message);
-    return data || [];
+    return ( data || []) as any as User[];
   },
 
   // Get single user by ID
@@ -49,7 +49,7 @@ export const userService = {
       .single();
 
     if (error) throw new Error(error.message);
-    return data;
+    return data as any as User;
   },
 
   // Create new user
@@ -61,7 +61,8 @@ export const userService = {
       .single();
 
     if (error) throw new Error(error.message);
-    return data;
+    return data as any as User;
+
   },
 
   // Update existing user
@@ -74,7 +75,8 @@ export const userService = {
       .single();
 
     if (error) throw new Error(error.message);
-    return data;
+    return data as any as User;
+
   },
 
   // Delete user
@@ -93,7 +95,8 @@ export const userService = {
       .single();
 
     if (error) throw new Error(error.message);
-    return data;
+    return data as any as User;
+
   },
 
   // Fetch all departments
@@ -104,7 +107,7 @@ export const userService = {
       .order("name", { ascending: true });
 
     if (error) throw new Error(error.message);
-    return data || [];
+    return (data || []) as any as Department[];
   },
 
   // Fetch all designations
@@ -115,6 +118,6 @@ export const userService = {
       .order("name", { ascending: true });
 
     if (error) throw new Error(error.message);
-    return data || [];
+    return (data || []) as any as Designation[];
   },
 };

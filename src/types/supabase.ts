@@ -866,7 +866,7 @@ export type Database = {
         }[]
       }
       allocate_leave_for_user: {
-        Args: { p_hire_date?: string; p_user_id: string; p_year: number }
+        Args: {  p_user_id: string; p_year: number }
         Returns: undefined
       }
       calculate_study_leave_end_date: {

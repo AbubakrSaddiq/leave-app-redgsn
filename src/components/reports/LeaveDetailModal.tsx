@@ -1,13 +1,26 @@
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 import {
-  Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter,
-  ModalBody, ModalCloseButton, Button, VStack, HStack, Box,
-  Text, Badge, Divider, Grid, GridItem,
-} from '@chakra-ui/react';
-import { FiPrinter, FiDownload } from 'react-icons/fi';
-import type { LeaveReportData } from '@/api/reports.api';
-import { formatDate } from '@/utils/date.utils';
-import { useLeaveDetailModal } from '@/hooks/useLeaveDetailModal';
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Button,
+  VStack,
+  HStack,
+  Box,
+  Text,
+  Badge,
+  Divider,
+  Grid,
+  GridItem,
+} from "@chakra-ui/react";
+import { FiPrinter, FiDownload } from "react-icons/fi";
+import type { LeaveReportData } from "@/api/reports.api";
+import { formatDate } from "@/utils/date.utils";
+import { useLeaveDetailModal } from "@/hooks/useLeaveDetailModal";
 
 interface LeaveDetailModalProps {
   isOpen: boolean;
@@ -15,13 +28,23 @@ interface LeaveDetailModalProps {
   leave: LeaveReportData;
 }
 
-export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalProps) {
+export function LeaveDetailModal({
+  isOpen,
+  onClose,
+  leave,
+}: LeaveDetailModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
-  const { isExporting, handlePrint, handleExportPdf, getLeaveTypeColor } = useLeaveDetailModal(leave);
+  const { isExporting, handlePrint, handleExportPdf, getLeaveTypeColor } =
+    useLeaveDetailModal(leave);
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="4xl" scrollBehavior="inside">
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="4xl"
+        scrollBehavior="inside"
+      >
         <ModalOverlay />
         <ModalContent>
           <ModalHeader className="no-print">
@@ -31,9 +54,13 @@ export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalPro
 
           <ModalBody ref={printRef}>
             <VStack align="stretch" spacing={6} className="print-content">
-              
               {/* Header Section */}
-              <Box textAlign="center" pb={4} borderBottom="2px solid" borderColor="blue.500">
+              <Box
+                textAlign="center"
+                pb={4}
+                borderBottom="2px solid"
+                borderColor="blue.500"
+              >
                 <Text fontSize="2xl" fontWeight="bold" color="blue.600">
                   LEAVE APPLICATION
                 </Text>
@@ -49,21 +76,30 @@ export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalPro
                 </Text>
                 <Grid templateColumns="repeat(2, 1fr)" gap={4}>
                   <GridItem>
-                    <Text fontSize="sm" color="gray.600">Full Name</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Full Name
+                    </Text>
                     <Text fontWeight="bold">{leave.user.full_name}</Text>
                   </GridItem>
                   <GridItem>
-                    <Text fontSize="sm" color="gray.600">Email</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Email
+                    </Text>
                     <Text>{leave.user.email}</Text>
                   </GridItem>
                   <GridItem>
-                    <Text fontSize="sm" color="gray.600">Department</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Department
+                    </Text>
                     <Text fontWeight="bold">
-                      {leave.user.department?.code || "—"} - {leave.user.department?.name || "N/A"}
+                      {leave.user.department?.code || "—"} -{" "}
+                      {leave.user.department?.name || "N/A"}
                     </Text>
                   </GridItem>
                   <GridItem>
-                    <Text fontSize="sm" color="gray.600">Designation</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Designation
+                    </Text>
                     <Text>{leave.user.designation?.name || "N/A"}</Text>
                   </GridItem>
                 </Grid>
@@ -78,7 +114,9 @@ export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalPro
                 </Text>
                 <Grid templateColumns="repeat(2, 1fr)" gap={4}>
                   <GridItem>
-                    <Text fontSize="sm" color="gray.600">Leave Type</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Leave Type
+                    </Text>
                     <Badge
                       colorScheme={getLeaveTypeColor(leave.leave_type)}
                       fontSize="md"
@@ -90,21 +128,33 @@ export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalPro
                     </Badge>
                   </GridItem>
                   <GridItem>
-                    <Text fontSize="sm" color="gray.600">Working Days</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Working Days
+                    </Text>
                     <Text fontSize="xl" fontWeight="bold" color="blue.600">
                       {leave.working_days} days
                     </Text>
                   </GridItem>
                   <GridItem>
-                    <Text fontSize="sm" color="gray.600">Start Date</Text>
-                    <Text fontWeight="bold">{formatDate(leave.start_date, "MMMM dd, yyyy")}</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Start Date
+                    </Text>
+                    <Text fontWeight="bold">
+                      {formatDate(leave.start_date, "MMMM dd, yyyy")}
+                    </Text>
                   </GridItem>
                   <GridItem>
-                    <Text fontSize="sm" color="gray.600">End Date</Text>
-                    <Text fontWeight="bold">{formatDate(leave.end_date, "MMMM dd, yyyy")}</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      End Date
+                    </Text>
+                    <Text fontWeight="bold">
+                      {formatDate(leave.end_date, "MMMM dd, yyyy")}
+                    </Text>
                   </GridItem>
                   <GridItem colSpan={2}>
-                    <Text fontSize="sm" color="gray.600">Reason</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Reason
+                    </Text>
                     <Box
                       p={3}
                       bg="gray.50"
@@ -126,11 +176,13 @@ export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalPro
                 <Text fontSize="lg" fontWeight="bold" color="blue.600" mb={3}>
                   Approval Information
                 </Text>
-                
+
                 <VStack align="stretch" spacing={4}>
                   {/* Status */}
                   <Box>
-                    <Text fontSize="sm" color="gray.600">Status</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Status
+                    </Text>
                     <Badge
                       colorScheme="green"
                       fontSize="md"
@@ -143,7 +195,7 @@ export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalPro
                   </Box>
 
                   {/* Director Approval */}
-                  {leave.director_approved_at && (
+                  {(leave as any).director_approved_at && (
                     <Box
                       p={4}
                       bg="green.50"
@@ -156,12 +208,17 @@ export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalPro
                           ✓ Director Approval
                         </Text>
                         <Text fontSize="sm" color="gray.600">
-                          {formatDate(leave.director_approved_at, "MMMM dd, yyyy 'at' HH:mm")}
+                          {formatDate(
+                            leave.director_approved_at,
+                            "MMMM dd, yyyy 'at' HH:mm",
+                          )}
                         </Text>
                       </HStack>
                       {leave.director_comments && (
                         <Box mt={2}>
-                          <Text fontSize="sm" color="gray.600">Comments:</Text>
+                          <Text fontSize="sm" color="gray.600">
+                            Comments:
+                          </Text>
                           <Text mt={1}>{leave.director_comments}</Text>
                         </Box>
                       )}
@@ -169,7 +226,7 @@ export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalPro
                   )}
 
                   {/* HR Approval */}
-                  {leave.hr_approved_at && (
+                  {(leave as any).hr_approved_at && (
                     <Box
                       p={4}
                       bg="blue.50"
@@ -182,12 +239,18 @@ export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalPro
                           ✓ HR Approval
                         </Text>
                         <Text fontSize="sm" color="gray.600">
-                          {formatDate(leave.hr_approved_at, "MMMM dd, yyyy 'at' HH:mm")}
+                          {formatDate(
+                            leave.hr_approved_at &&
+                              (leave as any).hr_approved_at,
+                            "MMMM dd, yyyy 'at' HH:mm",
+                          )}
                         </Text>
                       </HStack>
                       {leave.hr_comments && (
                         <Box mt={2}>
-                          <Text fontSize="sm" color="gray.600">Comments:</Text>
+                          <Text fontSize="sm" color="gray.600">
+                            Comments:
+                          </Text>
                           <Text mt={1}>{leave.hr_comments}</Text>
                         </Box>
                       )}
@@ -200,32 +263,53 @@ export function LeaveDetailModal({ isOpen, onClose, leave }: LeaveDetailModalPro
               <Box bg="gray.50" p={4} borderRadius="md">
                 <Grid templateColumns="repeat(2, 1fr)" gap={3}>
                   <GridItem>
-                    <Text fontSize="xs" color="gray.600">Application Submitted</Text>
+                    <Text fontSize="xs" color="gray.600">
+                      Application Submitted
+                    </Text>
                     <Text fontSize="sm" fontWeight="medium">
-                      {formatDate(leave.created_at, "MMM dd, yyyy 'at' HH:mm")}
+                      {formatDate(
+                        (leave as any).created_at,
+                        "MMM dd, yyyy 'at' HH:mm",
+                      )}
                     </Text>
                   </GridItem>
-                  {leave.updated_at && leave.updated_at !== leave.created_at && (
-                    <GridItem>
-                      <Text fontSize="xs" color="gray.600">Last Updated</Text>
-                      <Text fontSize="sm" fontWeight="medium">
-                        {formatDate(leave.updated_at, "MMM dd, yyyy 'at' HH:mm")}
-                      </Text>
-                    </GridItem>
-                  )}
+                  {(leave as any).updated_at &&
+                    (leave as any).updated_at !== leave.created_at && (
+                      <GridItem>
+                        <Text fontSize="xs" color="gray.600">
+                          Last Updated
+                        </Text>
+                        <Text fontSize="sm" fontWeight="medium">
+                          {formatDate(
+                            (leave as any).updated_at,
+                            "MMM dd, yyyy 'at' HH:mm",
+                          )}
+                        </Text>
+                      </GridItem>
+                    )}
                 </Grid>
               </Box>
 
               {/* Footer */}
               <Box pt={4} borderTop="1px solid" borderColor="gray.200">
-                <Text fontSize="xs" color="gray.500" textAlign="center" fontStyle="italic">
-                  This is an official leave application record. For authorized personnel only.
+                <Text
+                  fontSize="xs"
+                  color="gray.500"
+                  textAlign="center"
+                  fontStyle="italic"
+                >
+                  This is an official leave application record. For authorized
+                  personnel only.
                 </Text>
               </Box>
             </VStack>
           </ModalBody>
 
-          <ModalFooter className="no-print" borderTop="1px solid" borderColor="gray.200">
+          <ModalFooter
+            className="no-print"
+            borderTop="1px solid"
+            borderColor="gray.200"
+          >
             <HStack spacing={3}>
               <Button
                 leftIcon={<FiPrinter />}

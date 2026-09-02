@@ -20,6 +20,7 @@ export enum LeaveType {
   SICK = 'sick',
   MATERNITY = 'maternity',
   PATERNITY = 'paternity',
+  STUDY = 'study',
 }
 
 export enum LeaveStatus {
@@ -28,6 +29,9 @@ export enum LeaveStatus {
   PENDING_HR = 'pending_hr',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+  PENDING_RESUMPTION_DIRECTOR = 'pending_resumption_director',
+  PENDING_RESUMPTION_HR = 'pending_resumption_hr',
+  RESUMED = 'resumed',
 }
 
 export enum NotificationType {
@@ -37,10 +41,20 @@ export enum NotificationType {
   LEAVE_APPROVED = 'leave_approved',
   LEAVE_REJECTED = 'leave_rejected',
   BALANCE_LOW = 'balance_low',
+  RESUMPTION_PENDING_DIRECTOR = 'resumption_pending_director',
+  RESUMPTION_PENDING_HR = 'resumption_pending_hr',
+  RESUMPTION_APPROVED = 'resumption_approved',
+  RESUMPTION_REJECTED = 'resumption_rejected',
+}
+
+export enum StudyProgram {
+  BSC = 'bsc',
+  MSC = 'msc',
+  PHD = 'phd',
 }
 
 // ============================================
-// DATABASE MODELS
+// DATABASE MODELS - With nullable fields to match DB
 // ============================================
 
 export interface User {
@@ -49,18 +63,25 @@ export interface User {
   full_name: string;
   role: UserRole;
   department_id: string | null;
-  // hire_date: string;
-  is_active: boolean;
+  designation_id?: string | null;
+
+  is_active: boolean | null; // MADE NULLABLE - DB has null
   avatar_url: string | null;
+  has_submitted_desired_months?: boolean | null;
   created_at: string;
   updated_at: string;
   department?: Department;
+  designation?: Designation;
+}
 
-    // Relations (populated by queries)
-  // department?: Department;
-  // director?: User;
-  // leave_balances?: LeaveBalance[];
-  // leave_applications?: LeaveApplication[];
+export interface Designation {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Department {
@@ -77,35 +98,35 @@ export interface LeaveTypeConfig {
   leave_type: LeaveType;
   annual_days: number;
   min_notice_days: number;
-  can_reapply: boolean;
+  can_reapply: boolean | null; // MADE NULLABLE - DB has null
   description: string | null;
-  created_at: string;
+  created_at: string | null;
 }
 
 export interface LeaveBalance {
   id: string;
-  user_id: string;
+  user_id: string | null; // MADE NULLABLE
   leave_type: LeaveType;
   year: number;
   allocated_days: number;
-  used_days: number;
-  pending_days: number;
-  available_days: number;
-  created_at: string;
-  updated_at: string;
+  used_days: number | null; // MADE NULLABLE
+  pending_days: number | null; // MADE NULLABLE
+  available_days: number | null; // MADE NULLABLE
+  created_at: string | null;
+  updated_at: string | null;
   user?: User;
 }
 
 export interface LeaveApplication {
   id: string;
   application_number: string;
-  user_id: string;
+  user_id: string | null; // MADE NULLABLE
   leave_type: LeaveType;
   start_date: string;
   end_date: string;
   working_days: number;
-  status: LeaveStatus;
-  reason: string;
+  status: LeaveStatus | null; // MADE NULLABLE
+  reason: string | null;
   submitted_at: string | null;
   director_id: string | null;
   director_approved_by: string | null;
@@ -114,10 +135,18 @@ export interface LeaveApplication {
   hr_approved_by: string | null;
   hr_approved_at: string | null;
   hr_comments: string | null;
-  created_at: string;
-  updated_at: string;
-  user?: User;
-  director?: User;
+  created_at: string | null;
+  updated_at: string | null;
+  user?: User | null;
+  director?: User | null;
+  study_program?: StudyProgram | null;
+  resumption_requested_at?: string | null;
+  resumption_director_approved_at?: string | null;
+  resumption_director_comments?: string | null;
+  resumption_director_approved_by?: string | null;
+  resumption_hr_approved_at?: string | null;
+  resumption_hr_comments?: string | null;
+  resumption_hr_approved_by?: string | null;
 }
 
 export interface PublicHoliday {
@@ -125,21 +154,21 @@ export interface PublicHoliday {
   date: string;
   name: string;
   year: number;
-  is_active: boolean;
-  source: string;
-  created_at: string;
+  is_active: boolean | null; // MADE NULLABLE
+  source: string | null;
+  created_at: string | null;
 }
 
 export interface Notification {
   id: string;
-  user_id: string;
-  type: NotificationType;
+  user_id: string | null;
+  type: string;
   title: string;
   message: string;
   related_leave_id: string | null;
-  is_read: boolean;
-  email_sent: boolean;
-  created_at: string;
+  is_read: boolean | null;
+  email_sent: boolean | null;
+  created_at: string | null;
 }
 
 // ============================================
@@ -152,6 +181,7 @@ export interface CreateLeaveApplicationDto {
   end_date: string;
   reason: string;
   working_days: number;
+  study_program?: StudyProgram;
 }
 
 export interface ApprovalActionDto {
@@ -193,4 +223,24 @@ export interface PaginationMeta {
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: PaginationMeta;
+}
+
+// ============================================
+// Profile Type (for Auth)
+// ============================================
+
+export interface Profile {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  department_id: string | null;
+  designation_id: string | null;
+  is_active: boolean | null;
+  avatar_url: string | null;
+  has_submitted_desired_months: boolean | null;
+  created_at: string;
+  updated_at: string;
+  department?: Department;
+  designation?: Designation;
 }

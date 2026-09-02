@@ -405,7 +405,7 @@ export const LeaveApplicationCard: React.FC<LeaveApplicationCardProps> = ({
                 onClick={() => handleOpenModal("resume")}
                 isLoading={requestResumption.isPending}
                 loadingText="Requesting..."
-                isFullWidth
+                width="100%"
               >
                 Resume Work
               </Button>
@@ -491,6 +491,9 @@ export const LeaveApplicationCard: React.FC<LeaveApplicationCardProps> = ({
             onConfirm={handleConfirmAction}
             applicationNumber={application.application_number}
             {...modalProps}
+            currentStep={
+              modalProps.currentStep as "director" | "hr" | undefined
+            }
           />
         </VStack>
       </CardBody>

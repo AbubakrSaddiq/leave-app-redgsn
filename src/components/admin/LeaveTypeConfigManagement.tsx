@@ -522,7 +522,9 @@ export const LeaveTypeConfigManagement: React.FC = () => {
             <AlertDialogBody>
               Are you sure? This will permanently delete the configuration for{" "}
               <Box as="span" fontWeight="bold">
-                {configToDelete && LEAVE_TYPE_LABELS[configToDelete.leave_type]}
+                {configToDelete &&
+                  (LEAVE_TYPE_LABELS[configToDelete?.leave_type as LeaveType] ||
+                    "Unknown")}
               </Box>
               .
               {configToDelete?.annual_days > 0 && (

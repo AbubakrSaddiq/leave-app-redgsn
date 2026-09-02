@@ -32,7 +32,7 @@ export function useIdleTimer({
   events = DEFAULT_EVENTS,
   enabled = true,
 }: UseIdleTimerOptions) {
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const lastActivityRef = useRef<number>(Date.now());
   const onIdleRef = useRef(onIdle);
 

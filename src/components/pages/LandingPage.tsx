@@ -416,7 +416,7 @@ export const LandingPage = () => {
                   position="relative"
                   animation={`${float} 6s ease-in-out infinite`}
                 >
-                  <Box variant="landing-glass">
+                  <Box className="landing-glass">
                     <Box p={6}>
                       <HStack mb={5} spacing={2}>
                         <Box

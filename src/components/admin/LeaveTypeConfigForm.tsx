@@ -99,7 +99,7 @@ export const LeaveTypeConfigForm: React.FC<LeaveTypeConfigFormProps> = ({
           can_reapply: existingConfig.can_reapply,
           description:
             existingConfig.description ||
-            LEAVE_TYPE_DESCRIPTIONS[existingConfig.leave_type],
+            LEAVE_TYPE_DESCRIPTIONS[existingConfig.leave_type as LeaveType],
         });
       } else if (leaveType) {
         reset({
@@ -171,7 +171,9 @@ export const LeaveTypeConfigForm: React.FC<LeaveTypeConfigFormProps> = ({
                 </FormLabel>
                 <Input
                   value={
-                    LEAVE_TYPE_LABELS[existingConfig?.leave_type || leaveType!]
+                    LEAVE_TYPE_LABELS[
+                      (existingConfig?.leave_type || leaveType) as LeaveType
+                    ]
                   }
                   isDisabled={true}
                   bg="gray.50"
@@ -208,7 +210,7 @@ export const LeaveTypeConfigForm: React.FC<LeaveTypeConfigFormProps> = ({
                       max: { value: 365, message: "Cannot exceed 365" },
                       valueAsNumber: true,
                     })}
-                    size={inputSize}
+                    size={inputSize as any}
                   />
                   <NumberInputStepper>
                     <NumberIncrementStepper />
@@ -240,7 +242,7 @@ export const LeaveTypeConfigForm: React.FC<LeaveTypeConfigFormProps> = ({
                       max: { value: 90, message: "Cannot exceed 90 days" },
                       valueAsNumber: true,
                     })}
-                    size={inputSize}
+                    size={inputSize as any}
                   />
                   <NumberInputStepper>
                     <NumberIncrementStepper />

@@ -42,6 +42,7 @@ import {
   useIsMobile,
 } from "@/styles/responsive";
 import type { User, UserFormData } from "@/types/user";
+import { Designation } from "@/types/models";
 
 export const UserManagement: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -207,7 +208,10 @@ export const UserManagement: React.FC = () => {
             </Center>
           ) : (
             // User Cards Grid - Mobile Friendly
-            <SimpleGrid columns={gridColumns} spacing={spacing.gridGaps.normal}>
+            <SimpleGrid
+              columns={gridColumns as any}
+              spacing={spacing.gridGaps.normal}
+            >
               {users.map((user) => (
                 <UserCard
                   key={user.id}
@@ -246,7 +250,7 @@ export const UserManagement: React.FC = () => {
           onClose();
           setSelectedUser(null);
         }}
-        onSubmit={handleFormSubmit}
+        onSuccess={handleFormSubmit as any}
       />
 
       {/* Delete Confirmation Dialog */}

@@ -83,11 +83,11 @@ export const leaveService = {
       .eq('user_id', user.id)
       .select(`
         *,
-        user:user_id (
+        user:users!leave_applications_user_id_fkey (
           id,
           full_name,
           email,
-          department:department_id (
+          department:departments!users_department_id_fkey (
             id,
             name,
             code
@@ -117,23 +117,23 @@ export const leaveService = {
         updated_at: new Date().toISOString(),
       })
       .eq('id', applicationId)
-      .select(`
-        *,
-        user:user_id (
+    .select(`
+      *,
+      user:users!leave_applications_user_id_fkey (
+        id,
+        full_name,
+        email,
+        department:departments!users_department_id_fkey (
           id,
-          full_name,
-          email,
-          department:department_id (
-            id,
-            name,
-            code
-          )
+          name,
+          code
         )
-      `)
+      )
+    `)
       .single();
 
     if (error) throw error;
-    return data as LeaveApplication;
+    return data as any as LeaveApplication;
   },
 
   /**
@@ -153,23 +153,23 @@ export const leaveService = {
         updated_at: new Date().toISOString(),
       })
       .eq('id', applicationId)
-      .select(`
-        *,
-        user:user_id (
-          id,
-          full_name,
-          email,
-          department:department_id (
-            id,
-            name,
-            code
-          )
-        )
-      `)
+     .select(`
+  *,
+  user:users!leave_applications_user_id_fkey (
+    id,
+    full_name,
+    email,
+    department:departments!users_department_id_fkey (
+      id,
+      name,
+      code
+    )
+  )
+`)
       .single();
 
     if (error) throw error;
-    return data as LeaveApplication;
+    return data as any as LeaveApplication;
   },
 
   /**
@@ -198,22 +198,22 @@ export const leaveService = {
       .from('leave_applications')
       .update(updateData)
       .eq('id', applicationId)
-      .select(`
-        *,
-        user:user_id (
-          id,
-          full_name,
-          email,
-          department:department_id (
-            id,
-            name,
-            code
-          )
-        )
-      `)
+     .select(`
+  *,
+  user:users!leave_applications_user_id_fkey (
+    id,
+    full_name,
+    email,
+    department:departments!users_department_id_fkey (
+      id,
+      name,
+      code
+    )
+  )
+`)
       .single();
 
     if (error) throw error;
-    return data as LeaveApplication;
+    return data as any as LeaveApplication;
   },
 };

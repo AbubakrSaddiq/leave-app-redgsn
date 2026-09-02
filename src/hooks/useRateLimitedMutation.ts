@@ -70,7 +70,7 @@ export function useRateLimitedMutation<
         });
       } else {
         // Call original error handler if provided
-        options?.onError?.(error, undefined as TVariables, undefined as TContext);
+        options?.onError?.(error, undefined as TVariables, undefined as TContext, {} as any);
       }
     },
     ...options,

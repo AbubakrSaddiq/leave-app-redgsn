@@ -6,9 +6,11 @@ import {
   useRejectLeaveApplication 
 } from "@/hooks/useLeaveApplication";
 import { LeaveStatus, LeaveApplication } from "@/types/models";
+import { useAuth } from "@/hooks/useAuth";
 
 export const useApprovalQueue = (role: "director" | "hr") => {
   const [statusFilter, setStatusFilter] = useState<LeaveStatus | "all">("all");
+  const { profile } = useAuth();
 
   // Define what "pending" means for the current user (including resumption)
   const rolePendingStatuses = role === "director" 
@@ -23,14 +25,24 @@ export const useApprovalQueue = (role: "director" | "hr") => {
     queryStatuses = [statusFilter as LeaveStatus];
   }
 
-  const { data, isLoading, error } = useLeaveApplications({
+  // Build query params with director_id if role is director
+  const queryParams: any = {
     status: queryStatuses,
     page: 1,
     limit: 50,
-  });
+  };
+
+  // If director, pass their ID to filter by department
+  if (role === "director" && profile?.id) {
+    queryParams.director_id = profile.id;
+  }
+
+  const { data, isLoading, error } = useLeaveApplications(queryParams);
 
   const approveMutation = useApproveLeaveApplication();
   const rejectMutation = useRejectLeaveApplication();
+
+  const applications = data?.data || [];
 
   const handleApprove = async (id: string, comments?: string) => {
     // Check if this is a resumption request
@@ -46,9 +58,8 @@ export const useApprovalQueue = (role: "director" | "hr") => {
       
       return approveMutation.mutateAsync({
         id,
-        status: nextStatus,
+        status: nextStatus as any, // Type assertion to bypass strict typing
         comments: comments || "Resumption approved",
-        isResumption: true,
       });
     } else {
       // For regular leave: Director moves to PENDING_HR, HR moves to APPROVED
@@ -58,9 +69,8 @@ export const useApprovalQueue = (role: "director" | "hr") => {
 
       return approveMutation.mutateAsync({
         id,
-        status: nextStatus,
+        status: nextStatus as any,
         comments: comments || "Approved",
-        isResumption: false,
       });
     }
   };
@@ -74,12 +84,9 @@ export const useApprovalQueue = (role: "director" | "hr") => {
     return rejectMutation.mutateAsync({ 
       id, 
       comments,
-      isResumption,
     });
   };
 
-  const applications = data?.data || [];
-  
   // Separate counts for regular and resumption requests
   const regularPendingCount = applications.filter(
     app => app.status === (role === "director" ? LeaveStatus.PENDING_DIRECTOR : LeaveStatus.PENDING_HR)

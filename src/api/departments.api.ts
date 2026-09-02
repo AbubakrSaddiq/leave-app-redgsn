@@ -18,7 +18,7 @@ export async function getDepartments(): Promise<Department[]> {
     .order('name');
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as any as Department[];
 }
 
 /**
@@ -36,7 +36,7 @@ export async function createDepartment(params: {
     .single();
 
   if (error) throw error;
-  return data;
+  return data as any as Department;
 }
 
 /**
@@ -54,7 +54,8 @@ export async function updateDepartment(
     .single();
 
   if (error) throw error;
-  return data;
+  return data as any as Department;
+
 }
 
 /**

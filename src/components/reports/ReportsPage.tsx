@@ -266,19 +266,22 @@ export function ReportsPage() {
                           </Td>
                           <Td fontSize="xs">
                             <VStack align="start" spacing={1}>
-                              {report.director_approved_at && (
+                              {(report as any).director_approved_at && (
                                 <Text fontSize="10px" color="gray.600">
                                   ✓ Director:{" "}
                                   {formatDate(
-                                    report.director_approved_at,
+                                    (report as any).director_approved_at,
                                     "MMM d",
                                   )}
                                 </Text>
                               )}
-                              {report.hr_approved_at && (
+                              {(report as any).hr_approved_at && (
                                 <Text fontSize="10px" color="gray.600">
                                   ✓ HR:{" "}
-                                  {formatDate(report.hr_approved_at, "MMM d")}
+                                  {formatDate(
+                                    (report as any).hr_approved_at,
+                                    "MMM d",
+                                  )}
                                 </Text>
                               )}
                             </VStack>

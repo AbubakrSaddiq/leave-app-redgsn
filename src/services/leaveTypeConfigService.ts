@@ -14,7 +14,7 @@ export const leaveTypeConfigService = {
       .order("leave_type", { ascending: true });
 
     if (error) throw new Error(error.message);
-    return data || [];
+    return (data || []) as any as LeaveTypeConfig[];
   },
 
   // Fetch single configuration by leave type
@@ -26,7 +26,7 @@ export const leaveTypeConfigService = {
       .maybeSingle();
 
     if (error) throw new Error(error.message);
-    return data;
+    return data as any as LeaveTypeConfig | null;
   },
 
   // Create new configuration
@@ -44,7 +44,7 @@ export const leaveTypeConfigService = {
       .single();
 
     if (error) throw new Error(error.message);
-    return result;
+    return result as any as LeaveTypeConfig;
   },
 
   // Update configuration - FIXED VERSION

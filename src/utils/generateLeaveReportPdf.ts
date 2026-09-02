@@ -5,7 +5,7 @@
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { LeaveReportData } from '@/api/reports.api';
+import type { LeaveReportData } from '@/types/reports';
 import type { LeaveReportFilters } from '@/api/reports.api';
 import { formatDate } from '@/utils/date.utils';
 
@@ -114,12 +114,12 @@ export async function generateLeaveReportPdf(
       `${formatDate(report.start_date, 'MMM dd')} -\n${formatDate(report.end_date, 'MMM dd, yyyy')}`,
       report.working_days.toString(),
       [
-        report.director_approved_at ? `Dir: ${formatDate(report.director_approved_at, 'MMM dd')}` : '',
-        report.hr_approved_at ? `HR: ${formatDate(report.hr_approved_at, 'MMM dd')}` : '',
+        (report as any).director_approved_at ? `Dir: ${formatDate((report as any).director_approved_at, 'MMM dd')}` : '',
+        (report as any).hr_approved_at ? `HR: ${formatDate((report as any).hr_approved_at, 'MMM dd')}` : '',
       ].filter(Boolean).join('\n') || '—',
       [
-        report.director_comments ? `Dir: ${report.director_comments}` : '',
-        report.hr_comments ? `HR: ${report.hr_comments}` : '',
+        (report as any).director_comments ? `Dir: ${(report as any).director_comments}` : '',
+        (report as any).hr_comments ? `HR: ${(report as any).hr_comments}` : '',
       ].filter(Boolean).join('\n') || '—',
     ];
   });

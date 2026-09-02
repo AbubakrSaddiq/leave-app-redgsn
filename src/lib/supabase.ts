@@ -24,4 +24,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+// Type safe helper for database queries
+export type SupabaseClient = typeof supabase;
+
 export default supabase;

@@ -23,7 +23,7 @@ export const getPublicHolidays = async (year?: number): Promise<PublicHoliday[]>
     .order('date');
 
   if (error) throw error;
-  return data;
+  return data as any as PublicHoliday[];
 };
 
 export const getHolidaysInRange = async (
@@ -39,7 +39,7 @@ export const getHolidaysInRange = async (
     .order('date');
 
   if (error) throw error;
-  return data;
+  return data as any as PublicHoliday[];
 };
 
 export const isHoliday = async (date: string): Promise<boolean> => {
@@ -112,7 +112,7 @@ export const addHoliday = async (date: string, name: string): Promise<PublicHoli
     .single();
 
   if (error) throw error;
-  return data;
+  return data as any as PublicHoliday;
 };
 
 export const deleteHoliday = async (id: string): Promise<void> => {

@@ -3,7 +3,7 @@
 // ============================================
 
 import { supabase } from '@/lib/supabase';
-import type { LeaveApplication } from '@/types/models';
+import type { LeaveApplication, LeaveStatus, LeaveType } from '@/types/models';
 
 export interface LeaveReportFilters {
   startDate?: string;
@@ -13,9 +13,28 @@ export interface LeaveReportFilters {
   leaveType?: string;
 }
 
-export interface LeaveReportData extends LeaveApplication {
-  // Fields already included from base type
-  // Adding explicit typing for nested relations
+export interface LeaveReportData   {
+  hr_comments: import("react/jsx-runtime").JSX.Element;
+  created_at(created_at: any, arg1: string): import("react").ReactNode;
+  updated_at: boolean;
+  hr_approved_at: import("react/jsx-runtime").JSX.Element;
+  director_comments: import("react/jsx-runtime").JSX.Element;
+  director_approved_at: any;
+    id: string;
+  application_number: string;
+  user_id: string;
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  working_days: number;
+  status: LeaveStatus;
+  reason: string;
+  submitted_at: string | null;
+  user_name: string;
+  user_email: string;
+  department_name: string;
+  department_code: string;
+  
   user: {
     full_name: string;
     email: string;
@@ -68,14 +87,14 @@ export async function getApprovedLeaveReports(
       query = query.eq('user_id', filters.userId);
     }
     if (filters?.leaveType) {
-      query = query.eq('leave_type', filters.leaveType);
+      query = query.eq('leave_type', filters.leaveType as any);
     }
 
     const { data, error } = await query;
 
     if (error) throw error;
 
-    return data as LeaveReportData[];
+    return data as any as LeaveReportData[];
   } catch (error: any) {
     console.error('Error fetching leave reports:', error);
     throw new Error(error.message || 'Failed to fetch leave reports');

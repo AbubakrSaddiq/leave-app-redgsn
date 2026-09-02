@@ -18,7 +18,7 @@ export const BenefitCard: React.FC<BenefitCardProps> = ({
   stat,
   statLabel,
 }) => (
-  <Box variant="landing-benefit" role="group">
+  <Box className="landing-benefit" role="group">
     <Box
       w="44px"
       h="44px"

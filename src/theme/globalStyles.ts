@@ -15,3 +15,9 @@ export const injectGlobalStyles = () => {
   `;
   document.head.appendChild(style);
 };
+
+// Also export as default for compatibility
+export default injectGlobalStyles;
+
+// Export as GlobalStyles for named import
+export const GlobalStyles = injectGlobalStyles;

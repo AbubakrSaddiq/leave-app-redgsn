@@ -1,4 +1,4 @@
-// File: src/components/admin/UserForm.tsx (REFACTORED)
+// File: src/components/admin/UserForm.tsx (REFACTORED - FIXED)
 // ============================================
 // User Form Component - Mobile Responsive
 // Integrated with existing password management
@@ -61,6 +61,18 @@ import {
 } from "@/styles/responsive";
 import type { User, Department, Designation } from "@/types/user";
 
+// ============================================
+// DEFINE UserFormData TYPE (if not available in @/types/user)
+// ============================================
+export interface UserFormData {
+  full_name: string;
+  role: User["role"];
+  department_id: string | null;
+  designation_id: string | null;
+  email?: string; // Add optional
+  is_active?: boolean; // Add optional
+}
+
 // Constants
 const DEFAULT_PASSWORD = "Naseni123!";
 
@@ -89,17 +101,22 @@ const generateSecurePassword = (): string => {
     .join("");
 };
 
+// ============================================
+// PROPS INTERFACE
+// ============================================
 interface UserFormProps {
   user?: User | null;
   departments: Department[];
+  designations?: Designation[];
   isOpen: boolean;
-  onClose: () => {};
-  onSuccess: () => {};
+  onClose: () => void;
+  onSuccess?: (data?: UserFormData) => void;
 }
 
 export const UserForm: React.FC<UserFormProps> = ({
   user,
   departments,
+  designations: propDesignations = [],
   isOpen,
   onClose,
   onSuccess,
@@ -128,10 +145,15 @@ export const UserForm: React.FC<UserFormProps> = ({
   });
 
   // Fetch designations
-  const { data: designations, isLoading: loadingDesignations } = useQuery({
-    queryKey: ["designations"],
-    queryFn: getDesignations,
-  });
+  const { data: fetchedDesignations, isLoading: loadingDesignations } =
+    useQuery({
+      queryKey: ["designations"],
+      queryFn: getDesignations,
+    });
+
+  // Use prop designations if provided, otherwise use fetched
+  const availableDesignations =
+    propDesignations.length > 0 ? propDesignations : fetchedDesignations || [];
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -202,17 +224,20 @@ export const UserForm: React.FC<UserFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Create the user data object
+    const userData: UserFormData = {
+      full_name: formData.full_name,
+      role: formData.role as User["role"],
+      department_id: formData.department_id || null,
+      designation_id: formData.designation_id || null,
+    };
+
     if (user) {
       // UPDATE MODE
       try {
         await updateUserMutation.mutateAsync({
           id: user.id,
-          data: {
-            full_name: formData.full_name,
-            role: formData.role as User["role"],
-            department_id: formData.department_id || null,
-            designation_id: formData.designation_id || null,
-          },
+          data: userData,
         });
 
         toast({
@@ -223,7 +248,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           position: isMobile ? "top" : "bottom-right",
         });
 
-        if (typeof onSuccess === "function") onSuccess();
+        if (typeof onSuccess === "function") onSuccess(userData as any);
         if (typeof onClose === "function") onClose();
       } catch (error: any) {
         toast({
@@ -251,7 +276,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           title: "User created successfully",
           description:
             passwordOption === "auto"
-              ? "Generated password: ${formData.password}"
+              ? `Generated password: ${formData.password}`
               : `Default password: ${DEFAULT_PASSWORD}`,
           status: "success",
           duration: 5000,
@@ -259,7 +284,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           position: isMobile ? "top" : "bottom-right",
         });
 
-        if (typeof onSuccess === "function") onSuccess();
+        if (typeof onSuccess === "function") onSuccess(userData);
         if (typeof onClose === "function") onClose();
       } catch (error: any) {
         toast({
@@ -583,7 +608,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                     isDisabled={loadingDesignations}
                     size={inputSize}
                   >
-                    {designations?.map((d: Designation) => (
+                    {availableDesignations.map((d: Designation) => (
                       <option key={d.id} value={d.id}>
                         {d.name} {d.code && `(${d.code})`}
                       </option>

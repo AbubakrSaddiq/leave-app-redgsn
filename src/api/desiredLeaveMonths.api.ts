@@ -260,7 +260,12 @@ export async function getUsersWithoutDesiredMonths(): Promise<
 
     if (error) throw error;
 
-    return data || [];
+    return (data || []).map((item: any) => ({
+  id: item.id,
+  full_name: item.full_name,
+  email: item.email,
+  department: item.department?.name || undefined,
+})) as any;
   } catch (error: any) {
     console.error('Error fetching users without desired months:', error);
     throw new Error(error.message || 'Failed to fetch users');

@@ -52,7 +52,7 @@ export async function getCurrentUserProfile(): Promise<User> {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as any as User;
   } catch (error: any) {
     console.error('Error fetching profile:', error);
     throw new Error(error.message || 'Failed to fetch profile');
@@ -82,7 +82,7 @@ export async function updateUserProfile(params: UpdateProfileParams): Promise<Us
     if (updateError) throw updateError;
 
  
-    return data;
+    return data as any as User;
   } catch (error: any) {
     console.error('Error updating profile:', error);
     throw new Error(error.message || 'Failed to update profile');

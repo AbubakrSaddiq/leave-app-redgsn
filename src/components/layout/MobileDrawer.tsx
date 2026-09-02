@@ -140,8 +140,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                   <HStack spacing={2} width="100%">
                     <Avatar
                       size="sm"
-                      name={profile.full_name}
-                      src={profile.avatar_url}
+                      name={profile?.full_name || undefined}
+                      // src={profile?.avatar_url || undefined}
                     />
                     <VStack spacing={0} align="flex-start" flex={1} minW={0}>
                       <Text

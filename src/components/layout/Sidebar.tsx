@@ -168,8 +168,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <HStack spacing={2} width="100%">
                     <Avatar
                       size="sm"
-                      name={profile.full_name}
-                      src={profile.avatar_url}
+                      name={profile?.full_name || undefined}
+                      // src={profile?.avatar_url || undefined}
                     />
                     {!isCollapsed && (
                       <>

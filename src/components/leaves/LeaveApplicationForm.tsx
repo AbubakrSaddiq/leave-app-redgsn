@@ -494,7 +494,9 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
         {/* Balance Alert */}
         {!isStudy && currentBalance && (
           <Alert
-            status={currentBalance.available_days < 5 ? "warning" : "info"}
+            status={
+              (currentBalance?.available_days ?? 0) < 5 ? "warning" : "info"
+            }
             borderRadius="md"
             flexDirection={{ base: "column", sm: "row" }}
             alignItems={{ base: "flex-start", sm: "center" }}

@@ -55,6 +55,7 @@ export const useLeaveApplication = (id: string) => {
   });
 };
 
+// Change the validate hook to match the API:
 export const useValidateLeaveApplication = (
   userId: string,
   leaveType: LeaveType,
@@ -64,7 +65,11 @@ export const useValidateLeaveApplication = (
 ) => {
   return useQuery({
     queryKey: ['validate-leave', userId, leaveType, startDate, endDate],
-    queryFn: () => validateLeaveApplication(userId, leaveType, startDate, endDate),
+    queryFn: () => validateLeaveApplication({ 
+      leave_type: leaveType, 
+      start_date: startDate, 
+      end_date: endDate 
+    }),
     enabled: enabled && !!userId && !!startDate && !!endDate,
     staleTime: 0,
     retry: 1,

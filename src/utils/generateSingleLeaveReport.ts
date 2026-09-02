@@ -4,7 +4,7 @@
 // ============================================
 
 import jsPDF from 'jspdf';
-import type { LeaveReportData } from '@/api/reports.api';
+import type { LeaveReportData } from '@/types/reports';
 import { formatDate } from '@/utils/date.utils';
 
 export async function generateSingleLeaveReportPdf(
@@ -283,7 +283,7 @@ export async function generateSingleLeaveReportPdf(
   doc.setTextColor(darkGray);
   doc.setFont('helvetica', 'normal');
   doc.text(
-    formatDate(leave.created_at, "MMM dd, yyyy 'at' HH:mm"),
+    formatDate((leave as any).created_at, "MMM dd, yyyy 'at' HH:mm"),
     margin + 10,
     yPos + 28
   );

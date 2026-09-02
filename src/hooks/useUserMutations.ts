@@ -75,7 +75,7 @@ export const useUpdateUser = () => {
         .from("users")
         .update({
           full_name: data.full_name,
-          role: data.role,
+          role: data.role as any,
           department_id: data.department_id,
           designation_id: data.designation_id,
         })

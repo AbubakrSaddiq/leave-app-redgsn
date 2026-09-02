@@ -11,7 +11,7 @@ export const useLeaveExport = (leave: LeaveReportData) => {
 
   const handleExportPdf = async () => {
     try {
-      await generateSingleLeaveReportPdf(leave);
+      await generateSingleLeaveReportPdf(leave as any);
       toast({
         title: "PDF generated successfully",
         description: `Leave application ${leave.application_number} exported`,

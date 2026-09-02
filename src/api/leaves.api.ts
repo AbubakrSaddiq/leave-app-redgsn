@@ -141,7 +141,7 @@ export async function getLeaveApplications(params?: {
     }
 
     return {
-      data: data || [],
+      data: (data || []) as any as LeaveApplication[],
       pagination: {
         page,
         limit,
@@ -191,7 +191,7 @@ export async function getLeaveApplication(id: string): Promise<LeaveApplication>
   console.log('Fetched leave application:', data);
   console.log('User data:', data?.user);
 
-  return data;
+  return data as any as LeaveApplication;
 }
 
 // Alias for backward compatibility
@@ -273,7 +273,7 @@ export async function createLeaveApplication(params: {
       throw error;
     }
 
-    return data;
+    return data as any as LeaveApplication;
   } catch (error: any) {
     console.error('Create Application Error:', error.message);
     throw new Error(error.message || 'Failed to create leave application');
@@ -283,6 +283,8 @@ export async function createLeaveApplication(params: {
 // ============================================
 // VALIDATE LEAVE APPLICATION
 // ============================================
+
+// Replace the entire validateLeaveApplication function with:
 
 export async function validateLeaveApplication(params: {
   leave_type: LeaveType;
@@ -298,18 +300,20 @@ export async function validateLeaveApplication(params: {
       throw new Error('Not authenticated');
     }
 
-    const year = new Date(params.start_date).getFullYear();
-
-    const { data, error } = await supabase.rpc('validate_leave_application', {
+    const result = await supabase.rpc('validate_leave_application', {
       p_user_id: user.id,
       p_leave_type: params.leave_type,
       p_start_date: params.start_date,
       p_end_date: params.end_date,
     });
 
-    if (error) throw error;
+    if (result.error) throw result.error;
 
-    return data as LeaveValidationResult;
+    // The result.data might be a single object or an array
+    const responseData = result.data;
+    const validationResult = Array.isArray(responseData) ? responseData[0] : responseData;
+    
+    return validationResult as any as LeaveValidationResult;
   } catch (error: any) {
     console.error('Error validating leave application:', error);
     throw new Error(error.message || 'Validation failed');
@@ -393,7 +397,7 @@ export async function approveLeaveApplication(
     }
 
     console.log('Leave application approved:', data);
-    return data;
+    return data as any as LeaveApplication;
   } catch (error: any) {
     console.error('Error in approveLeaveApplication:', error);
     throw new Error(error.message || 'Failed to approve leave application');
@@ -453,7 +457,7 @@ export async function updateLeaveStatus(
       .single();
 
     if (error) throw error;
-    return data;
+    return data as any as LeaveApplication;
   } catch (error: any) {
     console.error('Update Status Error:', error.message);
     throw new Error(error.message || 'Failed to update leave status');

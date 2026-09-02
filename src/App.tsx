@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/context/AuthContext";
 import { AppRoutes } from "@/components/routes/AppRoutes";
 import naseniTheme from "@/theme/naseniTheme";
-import { GlobalStyles } from "@/theme/globalStyles";
+// import { GlobalStyles } from "@/theme/globalStyles";
 
 const queryClient = new QueryClient();
 

@@ -219,11 +219,24 @@ export const analyticsApi = {
       }
     });
 
+    const { data: directorData } = await supabase
+  .from('users')
+  .select(`
+    department_id,
+    department:departments!users_department_id_fkey (
+      id,
+      name,
+      code
+    )
+  `)
+  .eq('id', directorId)
+  .single();
+
     // 5. Department stats
     const departmentStats: DepartmentStats[] = [{
       department_id: departmentId,
-      department_name: director?.department?.name || 'Unknown',
-      department_code: director?.department?.code || '',
+      department_name: directorData?.department?.name || 'Unknown',
+      department_code: directorData?.department?.code || '',
       total_staff: totalStaff,
       staff_on_leave: activeLeaves.length,
       staff_on_leave_percentage: totalStaff > 0 ? (activeLeaves.length / totalStaff) * 100 : 0,
@@ -239,7 +252,7 @@ export const analyticsApi = {
     // 7. Department leave stats (only this department)
     const departmentLeaveStats: DepartmentLeaveStats[] = [{
       department_id: departmentId,
-      department_name: director?.department?.name || 'Unknown',
+      department_name: directorData?.department?.name || 'Unknown',
       total_leaves: leaves?.length || 0,
       active_leaves: activeLeaves.length,
       upcoming_leaves: upcomingLeaves.length,
