@@ -8,8 +8,8 @@ import {
   getCurrentUserProfile,
   updateUserProfile,
   changePassword,
-  uploadAvatar,
-  deleteAvatar,
+
+
   type UpdateProfileParams,
   type ChangePasswordParams,
 } from '@/api/profile.api';

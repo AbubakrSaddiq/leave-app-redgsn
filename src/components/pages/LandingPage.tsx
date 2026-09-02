@@ -34,7 +34,7 @@ import {
 } from "react-icons/fi";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { AnimatedSection } from "@/components/landing/AnimatedSection";
-import { WorkflowStep } from "@/components/landing/WorkflowStep";
+import { WorkflowStep } from "@/components/landing/WorkFlowStep";
 import { BenefitCard } from "@/components/landing/BenefitCard";
 import { fadeUp, shimmer, float, pulse } from "@/utils/keyframes";
 
