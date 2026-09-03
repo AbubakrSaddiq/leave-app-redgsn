@@ -77,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     profile?.role === "admin"
       ? [{ icon: FiBarChart2, label: "Analytics", href: "/analytics" }]
       : []),
-    { icon: FiSettings, label: "More", href: "/settings" },
+    { icon: FiSettings, label: "Administration", href: "/settings" },
   ];
 
   return (

@@ -53,7 +53,6 @@ import {
 
 // Tab configuration for better maintainability
 const ADMIN_TABS = [
-  { id: "profile", label: "Profile", icon: FiUser, component: ProfilePage },
   { id: "users", label: "Users", icon: FiUsers, component: UserManagement },
   {
     id: "departments",
@@ -86,6 +85,7 @@ const ADMIN_TABS = [
     component: LeaveAllocationManagement,
   },
   { id: "reports", label: "Reports", icon: FiPieChart, component: ReportsPage },
+  { id: "profile", label: "Profile", icon: FiUser, component: ProfilePage },
 ];
 
 const SettingsPage: React.FC = () => {

@@ -59,7 +59,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
     ...(profile?.role === "director" || profile?.role === "hr"
       ? [{ icon: FiBarChart2, label: "Analytics", href: "/analytics" }]
       : []),
-    { icon: FiSettings, label: "Settings", href: "/settings" },
+    { icon: FiSettings, label: "Administration", href: "/settings" },
   ];
 
   const handleNavClick = () => {
