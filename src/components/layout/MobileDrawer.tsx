@@ -32,6 +32,12 @@ import {
   FiChevronDown,
   FiLogOut,
   FiUser,
+  FiUsers,
+  FiBriefcase,
+  FiAward,
+  FiCalendar,
+  FiPieChart,
+  FiLayers,
 } from "react-icons/fi";
 import { useAuth } from "@/hooks/useAuth";
 import { authService } from "@/services/authService";
@@ -49,18 +55,77 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 }) => {
   const { profile } = useAuth();
 
+  // Check if user is a regular staff member (not admin, hr, or director)
+  const isStaff = profile?.role === "staff";
+  const isHR = profile?.role === "hr";
+  const isAdmin = profile?.role === "admin";
+  const isDirector = profile?.role === "director";
+
   const navigationItems = [
-    { icon: FiHome, label: "Dashboard", href: "/" },
-    { icon: FiEdit, label: "Apply Leave", href: "/apply-leave" },
-    { icon: FiFileText, label: "My Applications", href: "/my-applications" },
-    ...(profile?.role === "director" || profile?.role === "hr"
+    // Dashboard - Only for staff
+    ...(isStaff ? [{ icon: FiHome, label: "Dashboard", href: "/" }] : []),
+    // Apply Leave - Only for staff
+    ...(isStaff
+      ? [{ icon: FiEdit, label: "Apply Leave", href: "/apply-leave" }]
+      : []),
+    // My Applications - Only for staff
+    ...(isStaff
+      ? [
+          {
+            icon: FiFileText,
+            label: "My Applications",
+            href: "/my-applications",
+          },
+        ]
+      : []),
+    // Approvals - visible to directors, HR, and admin
+    ...(isDirector || isHR || isAdmin
       ? [{ icon: FiCheckCircle, label: "Approvals", href: "/approvals" }]
       : []),
-    ...(profile?.role === "director" || profile?.role === "hr"
+    // Analytics - visible to directors, HR, and admin
+    ...(isDirector || isHR || isAdmin
       ? [{ icon: FiBarChart2, label: "Analytics", href: "/analytics" }]
       : []),
-    { icon: FiSettings, label: "Administration", href: "/settings" },
   ];
+
+  // Admin/HR Management items - expanded in sidebar for HR and Admin
+  const managementItems = [
+    ...(isAdmin || isHR
+      ? [
+          { icon: FiUsers, label: "Users", href: "/settings/users" },
+          {
+            icon: FiBriefcase,
+            label: "Departments",
+            href: "/settings/departments",
+          },
+          {
+            icon: FiAward,
+            label: "Designations",
+            href: "/settings/designations",
+          },
+          {
+            icon: FiLayers,
+            label: "Leave Config",
+            href: "/settings/leave-config",
+          },
+          {
+            icon: FiCalendar,
+            label: "Desired Months",
+            href: "/settings/desired-months",
+          },
+          {
+            icon: FiSettings,
+            label: "Allocations",
+            href: "/settings/allocations",
+          },
+          { icon: FiPieChart, label: "Reports", href: "/settings/reports" },
+        ]
+      : []),
+    // Profile - visible to all users
+    { icon: FiUser, label: "Profile", href: "/settings/profile" },
+  ];
+
+  const allItems = [...navigationItems, ...managementItems];
 
   const handleNavClick = () => {
     onClose();
@@ -110,7 +175,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
           {/* Navigation Items */}
           <VStack width="100%" spacing={1} align="stretch" flex={1}>
-            {navigationItems.map((item) => (
+            {allItems.map((item) => (
               <NavItem
                 key={item.href}
                 icon={item.icon}
@@ -138,11 +203,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                   borderRadius="lg"
                 >
                   <HStack spacing={2} width="100%">
-                    <Avatar
-                      size="sm"
-                      name={profile?.full_name || undefined}
-                      // src={profile?.avatar_url || undefined}
-                    />
+                    <Avatar size="sm" name={profile?.full_name || undefined} />
                     <VStack spacing={0} align="flex-start" flex={1} minW={0}>
                       <Text
                         fontSize="xs"

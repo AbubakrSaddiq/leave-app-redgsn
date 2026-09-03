@@ -15,6 +15,15 @@ import SettingsPage from "@/components/pages/SettingsPage";
 import LandingPage from "@/components/pages/LandingPage";
 import { AnalyticsDashboard } from "@/components/analytics/AnalyticsDashboard";
 import { NotificationsPage } from "@/components/notifications/NotificationsPage";
+// Import the admin components for nested routes
+import { UserManagement } from "@/components/admin/UserManagement";
+import { DepartmentManagement } from "@/components/admin/DepartmentManagement";
+import { DesignationManagement } from "@/components/admin/DesignationManagement";
+import { DesiredMonthsAdminView } from "@/components/desiredMonths/DesiredMonthsAdminView";
+import { LeaveAllocationManagement } from "@/components/admin/LeaveAllocationManagement";
+import { ReportsPage } from "@/components/reports/ReportsPage";
+import { LeaveTypeConfigManagement } from "@/components/admin/LeaveTypeConfigManagement";
+import { ProfilePage } from "@/components/profile/ProfilePage";
 
 const router = createBrowserRouter([
   {
@@ -40,7 +49,7 @@ const router = createBrowserRouter([
       {
         path: "approvals",
         element: (
-          <ProtectedRoute allowedRoles={["director", "hr"]}>
+          <ProtectedRoute allowedRoles={["director", "hr", "admin"]}>
             <ApprovalsPage />
           </ProtectedRoute>
         ),
@@ -48,7 +57,7 @@ const router = createBrowserRouter([
       {
         path: "analytics",
         element: (
-          <ProtectedRoute allowedRoles={["director", "hr"]}>
+          <ProtectedRoute allowedRoles={["director", "hr", "admin"]}>
             <AnalyticsDashboard />
           </ProtectedRoute>
         ),
@@ -57,9 +66,48 @@ const router = createBrowserRouter([
         path: "notifications",
         element: <NotificationsPage />,
       },
+      // Settings - Main route with nested routes
       {
         path: "settings",
         element: <SettingsPage />,
+        children: [
+          {
+            index: true,
+            element: <SettingsPage />,
+          },
+          {
+            path: "profile",
+            element: <ProfilePage />,
+          },
+          {
+            path: "users",
+            element: <UserManagement />,
+          },
+          {
+            path: "departments",
+            element: <DepartmentManagement />,
+          },
+          {
+            path: "designations",
+            element: <DesignationManagement />,
+          },
+          {
+            path: "leave-config",
+            element: <LeaveTypeConfigManagement />,
+          },
+          {
+            path: "desired-months",
+            element: <DesiredMonthsAdminView />,
+          },
+          {
+            path: "allocations",
+            element: <LeaveAllocationManagement />,
+          },
+          {
+            path: "reports",
+            element: <ReportsPage />,
+          },
+        ],
       },
     ],
   },

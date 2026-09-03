@@ -1,4 +1,4 @@
-// File: src/pages/SettingsPage.tsx (REFACTORED)
+// File: src/pages/SettingsPage.tsx (UPDATED with nested routes)
 // ============================================
 // SettingsPage - User Settings & Admin Controls
 // Wraps profile and admin components
@@ -6,7 +6,7 @@
 // Desktop: Horizontal tabs
 // ============================================
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   Tabs,
@@ -36,6 +36,7 @@ import {
   FiLayers,
 } from "react-icons/fi";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import { ProfilePage } from "@/components/profile/ProfilePage";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { DepartmentManagement } from "@/components/admin/DepartmentManagement";
@@ -51,48 +52,86 @@ import {
   useIsMobile,
 } from "@/styles/responsive";
 
-// Tab configuration for better maintainability
+// Tab configuration with route paths
 const ADMIN_TABS = [
-  { id: "users", label: "Users", icon: FiUsers, component: UserManagement },
+  {
+    id: "users",
+    label: "Users",
+    icon: FiUsers,
+    path: "users",
+    component: UserManagement,
+  },
   {
     id: "departments",
     label: "Departments",
     icon: FiBriefcase,
+    path: "departments",
     component: DepartmentManagement,
   },
   {
     id: "designations",
     label: "Designations",
     icon: FiAward,
+    path: "designations",
     component: DesignationManagement,
   },
   {
     id: "leaveConfig",
     label: "Leave Config",
     icon: FiLayers,
+    path: "leave-config",
     component: LeaveTypeConfigManagement,
   },
   {
     id: "desiredMonths",
     label: "Desired Months",
     icon: FiCalendar,
+    path: "desired-months",
     component: DesiredMonthsAdminView,
   },
   {
     id: "allocations",
     label: "Allocations",
     icon: FiSettings,
+    path: "allocations",
     component: LeaveAllocationManagement,
   },
-  { id: "reports", label: "Reports", icon: FiPieChart, component: ReportsPage },
-  { id: "profile", label: "Profile", icon: FiUser, component: ProfilePage },
+  {
+    id: "reports",
+    label: "Reports",
+    icon: FiPieChart,
+    path: "reports",
+    component: ReportsPage,
+  },
+  {
+    id: "profile",
+    label: "Profile",
+    icon: FiUser,
+    path: "profile",
+    component: ProfilePage,
+  },
 ];
 
 const SettingsPage: React.FC = () => {
   const { profile } = useAuth();
   const isAdmin = profile?.role === "admin" || profile?.role === "hr";
   const isMobile = useIsMobile();
-  const [selectedTab, setSelectedTab] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Get current tab index from URL path
+  const getCurrentTabIndex = () => {
+    const path = location.pathname.split("/").pop() || "";
+    const index = ADMIN_TABS.findIndex((tab) => tab.path === path);
+    return index >= 0 ? index : 0;
+  };
+
+  const [selectedTab, setSelectedTab] = React.useState(getCurrentTabIndex());
+
+  // Update tab when URL changes
+  useEffect(() => {
+    setSelectedTab(getCurrentTabIndex());
+  }, [location.pathname]);
 
   // Responsive values
   const headingSize = useBreakpointValue({ base: "xl", md: "2xl" });
@@ -101,15 +140,25 @@ const SettingsPage: React.FC = () => {
   const showMobileDropdown = useBreakpointValue({ base: true, md: false });
   const showDesktopTabs = useBreakpointValue({ base: false, md: true });
 
-  // Get current component for mobile view
-  const CurrentComponent = ADMIN_TABS[selectedTab]?.component || ProfilePage;
+  // Handle tab change
+  const handleTabChange = (index: number) => {
+    setSelectedTab(index);
+    const tab = ADMIN_TABS[index];
+    if (tab) {
+      navigate(`/settings/${tab.path}`);
+    }
+  };
 
-  // Handle tab change for mobile dropdown
+  // Handle mobile dropdown change
   const handleMobileTabChange = (
     event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
-    setSelectedTab(parseInt(event.target.value, 10));
+    const index = parseInt(event.target.value, 10);
+    handleTabChange(index);
   };
+
+  // Get current component for mobile view
+  const CurrentComponent = ADMIN_TABS[selectedTab]?.component || ProfilePage;
 
   if (!isAdmin) {
     // Regular user view - just profile
@@ -137,7 +186,7 @@ const SettingsPage: React.FC = () => {
     );
   }
 
-  // Admin view - responsive tabs
+  // Admin view - responsive tabs with routing
   return (
     <Container maxW="container.xl" py={containerPadding}>
       <VStack spacing={spacing.stackSpacing.lg} align="stretch">
@@ -194,8 +243,8 @@ const SettingsPage: React.FC = () => {
             variant="enclosed"
             isLazy
             size={tabSize}
-            onChange={(index) => setSelectedTab(index)}
-            defaultIndex={selectedTab}
+            onChange={handleTabChange}
+            index={selectedTab}
           >
             <TabList
               overflowX="auto"
