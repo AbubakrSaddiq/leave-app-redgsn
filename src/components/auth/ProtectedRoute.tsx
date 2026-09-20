@@ -1,8 +1,8 @@
+// src/components/auth/ProtectedRoute.tsx
 import React from "react";
 import { Center, Spinner, VStack, Text, Box } from "@chakra-ui/react";
 import { useAuth } from "@/hooks/useAuth";
-import { LoginForm } from "./LoginForm";
-import { LandingPage } from "@/components/pages/LandingPage";
+import { LoginPage } from "./LoginPage";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,12 +15,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { profile, isLoading } = useAuth();
 
-  // 1. Loading state while checking session
+  //  Loading state while checking session
   if (isLoading) {
     return (
-      <Center h="100vh" w="100%">
+      <Center h="100vh" w="100%" bg="white">
         <VStack spacing={4} align="center">
-          <Spinner size="xl" color="blue.500" thickness="4px" />
+          <Spinner size="xl" color="naseni.primary" thickness="4px" />
           <Text fontWeight="medium" color="gray.600">
             Verifying session...
           </Text>
@@ -29,23 +29,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // 2. Not logged in: Show Login Form instead of the page
+  // Not logged in: Show the login page
   if (!profile) {
-    return (
-      <Box w="100%" minH="100vh">
-        {/* <LoginForm /> */}
-        <LandingPage />
-      </Box>
-    );
+    return <LoginPage />;
   }
 
   // 3. Role-based access control (RBAC)
   if (allowedRoles && !allowedRoles.includes(profile.role)) {
     return (
-      <Center h="100vh">
+      <Center h="100vh" bg="white">
         <VStack spacing={4} textAlign="center" p={8}>
           <Text fontSize="5xl">🚫</Text>
-          <Text fontSize="xl" fontWeight="bold">
+          <Text fontSize="xl" fontWeight="bold" color="naseni.primary">
             Access Denied
           </Text>
           <Text color="gray.600">
@@ -58,6 +53,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // 4. Authorized: Show the protected content
+  // Authorized: Show the protected content
   return <>{children}</>;
 };

@@ -12,7 +12,6 @@ import MyApplicationsPage from "@/components/pages/MyApplicationsPage";
 import ApprovalsPage from "@/components/pages/ApprovalsPage";
 import AnalyticsPage from "@/components/pages/AnalyticsPage";
 import SettingsPage from "@/components/pages/SettingsPage";
-import LandingPage from "@/components/pages/LandingPage";
 import { AnalyticsDashboard } from "@/components/analytics/AnalyticsDashboard";
 import { NotificationsPage } from "@/components/notifications/NotificationsPage";
 // Import the admin components for nested routes
