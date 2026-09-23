@@ -48,7 +48,7 @@ export const BalanceDashboard: React.FC = () => {
           thickness="4px"
         />
         <Text mt={4} fontSize={{ base: "sm", md: "md" }} color="gray.600">
-          Loading leave balances...
+          Loading leave...
         </Text>
       </Box>
     );
@@ -63,7 +63,7 @@ export const BalanceDashboard: React.FC = () => {
       >
         <AlertIcon />
         <AlertDescription fontSize={{ base: "sm", md: "md" }}>
-          Failed to load leave balances. Please try again later.
+          Failed to load leave. Please try again later.
         </AlertDescription>
       </Alert>
     );
@@ -78,8 +78,7 @@ export const BalanceDashboard: React.FC = () => {
       >
         <AlertIcon />
         <AlertDescription fontSize={{ base: "sm", md: "md" }}>
-          No leave balances found for {selectedYear}. Contact HR to allocate
-          your leave.
+          No leave found for {selectedYear}. Contact HR to allocate your leave.
         </AlertDescription>
       </Alert>
     );
@@ -100,7 +99,7 @@ export const BalanceDashboard: React.FC = () => {
             mb={{ base: 1, md: 2 }}
             fontSize={{ base: "xl", sm: "2xl", md: "3xl" }}
           >
-            Leave Balance Overview
+            Leave Overview
           </Heading>
           <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.600">
             View your available leave days across all types
@@ -213,7 +212,7 @@ export const BalanceDashboard: React.FC = () => {
       </Box>
 
       {/* Low Balance Warning Alert - Mobile friendly */}
-      {(balanceData?.balances?.filter(
+      {/* {(balanceData?.balances?.filter(
         (b: any) => (b.available_days ?? 0) > 0 && (b.available_days ?? 0) <= 5,
       ) ||
         []) && (
@@ -230,7 +229,7 @@ export const BalanceDashboard: React.FC = () => {
             leave.
           </AlertDescription>
         </Alert>
-      )}
+      )} */}
 
       {/* Balance Cards Grid */}
       <Grid

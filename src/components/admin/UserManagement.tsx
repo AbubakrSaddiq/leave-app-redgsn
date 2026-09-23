@@ -1,7 +1,6 @@
-// File: src/components/admin/UserManagement.tsx (REFACTORED)
+// src/components/admin/UserManagement.tsx
 // ============================================
 // User Management Component - Fully Responsive
-// Using centralized responsive configuration
 // ============================================
 
 import React, { useState, useCallback, useRef } from "react";
@@ -31,6 +30,7 @@ import {
   Center,
 } from "@chakra-ui/react";
 import { FiPlus, FiSearch } from "react-icons/fi";
+import { useQueryClient } from "@tanstack/react-query"; // ← NEW
 import { useUsers, useDepartments, useDesignations } from "@/hooks/useUsers";
 import { UserCard } from "./UserCard";
 import { UserForm } from "./UserForm";
@@ -42,24 +42,25 @@ import {
   useIsMobile,
 } from "@/styles/responsive";
 import type { User, UserFormData } from "@/types/user";
-import { Designation } from "@/types/models";
 
 export const UserManagement: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const queryClient = useQueryClient(); // ← NEW
 
   const isMobile = useIsMobile();
   const gridColumns = useBreakpointValue(gridPatterns.cards);
   const searchSize = useBreakpointValue({ base: "md", md: "lg" });
 
+  // NOTE: We only destructure what we need.
+  // We do NOT call `refetch` from the hook anymore.
   const {
     users,
     loading,
     filters,
     setFilters,
-    createUser,
     updateUser,
     deleteUser,
     toggleStatus,
@@ -91,22 +92,20 @@ export const UserManagement: React.FC = () => {
   );
 
   const handleFormSubmit = useCallback(
-    async (data: UserFormData) => {
+    async (data: UserFormData | User) => {
       if (selectedUser) {
-        await updateUser(selectedUser.id, data);
-      } else {
-        await createUser(data);
+        await updateUser(selectedUser.id, data as UserFormData);
+        setSelectedUser(null);
+        return;
       }
-      setSelectedUser(null);
-    },
-    [selectedUser, createUser, updateUser],
-  );
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFilters({ search: e.target.value });
+      // Create mode — user was created & leave allocated inside UserForm
+      // Invalidate the users query to force a refetch
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+      }, 500);
     },
-    [setFilters],
+    [selectedUser, updateUser, queryClient], // ← use queryClient instead of refetch
   );
 
   // Debounced search
@@ -121,11 +120,7 @@ export const UserManagement: React.FC = () => {
   return (
     <VStack align="stretch" spacing={spacing.stackSpacing.lg}>
       <Card variant="elevated" borderRadius="xl" shadow="sm">
-        <CardHeader
-          borderBottomWidth="1px"
-          pb={spacing.gaps.md}
-          flexDirection={{ base: "column", sm: "row" }}
-        >
+        <CardHeader borderBottomWidth="1px" pb={spacing.gaps.md}>
           <HStack
             justify="space-between"
             wrap="wrap"
@@ -159,7 +154,6 @@ export const UserManagement: React.FC = () => {
         </CardHeader>
 
         <CardBody>
-          {/* Search Input */}
           <InputGroup
             mb={spacing.stackSpacing.lg}
             maxW={{ base: "100%", md: "400px" }}
@@ -178,7 +172,6 @@ export const UserManagement: React.FC = () => {
             />
           </InputGroup>
 
-          {/* Loading State */}
           {loading ? (
             <Center py={spacing.section.base}>
               <VStack spacing={spacing.stackSpacing.sm}>
@@ -189,7 +182,6 @@ export const UserManagement: React.FC = () => {
               </VStack>
             </Center>
           ) : users.length === 0 ? (
-            // Empty State
             <Center py={spacing.section.base}>
               <VStack spacing={spacing.stackSpacing.md}>
                 <Text fontSize={fontSizes.body.medium} color="gray.500">
@@ -207,7 +199,6 @@ export const UserManagement: React.FC = () => {
               </VStack>
             </Center>
           ) : (
-            // User Cards Grid - Mobile Friendly
             <SimpleGrid
               columns={gridColumns as any}
               spacing={spacing.gridGaps.normal}
@@ -226,7 +217,6 @@ export const UserManagement: React.FC = () => {
             </SimpleGrid>
           )}
 
-          {/* User Count */}
           {!loading && users.length > 0 && (
             <Text
               fontSize={fontSizes.body.small}
@@ -282,7 +272,6 @@ export const UserManagement: React.FC = () => {
                 onClick={() => setUserToDelete(null)}
                 variant="ghost"
                 size={componentSizes.buttons.md}
-                width={{ base: "50%", sm: "auto" }}
               >
                 Cancel
               </Button>
@@ -290,7 +279,6 @@ export const UserManagement: React.FC = () => {
                 colorScheme="red"
                 onClick={handleDelete}
                 size={componentSizes.buttons.md}
-                width={{ base: "50%", sm: "auto" }}
               >
                 Delete Forever
               </Button>

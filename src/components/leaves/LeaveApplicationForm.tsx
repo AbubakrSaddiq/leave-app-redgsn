@@ -504,7 +504,7 @@ export const LeaveApplicationForm: React.FC<LeaveApplicationFormProps> = ({
             <AlertIcon boxSize={isMobile ? 4 : 5} />
             <Box flex="1" w="100%">
               <AlertTitle fontSize={isMobile ? "xs" : "sm"}>
-                Current Balance
+                Current Days Remaining
               </AlertTitle>
               <AlertDescription fontSize={isMobile ? "xs" : "sm"}>
                 Available: <strong>{currentBalance.available_days} days</strong>

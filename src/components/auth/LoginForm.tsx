@@ -76,7 +76,7 @@ export const LoginForm = () => {
           Welcome Back
         </Heading>
         <Text color="gray.500" fontSize="sm" textAlign="center">
-          Sign in to your NASENI account to continue
+          Sign in to continue
         </Text>
       </VStack>
 
